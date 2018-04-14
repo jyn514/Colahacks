@@ -1,9 +1,11 @@
 <?php
 $filename = $_POST["filename"];
-$zipname = $_FILES["zip"]["name"];
-move_uploaded_files($_FILES["zip"]["tmp_name"],"zipfiles/$zipname");
+$zipname = basename($_FILES["zip"]["name"]);
+echo $filename . " F";
+echo $zipname . " Z";
+move_uploaded_file($_FILES["zip"]["tmp_name"],"zipfiles/$zipname");
 
-system("python snapper.py $zipname $filename");
+echo system("python snapper.py zipfiles/$zipname $filename");
 
-header("Location: index.php?project=$zipname");
-?>
+//header("Location: index.php?project=$zipname");
+die();
