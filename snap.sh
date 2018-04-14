@@ -19,15 +19,14 @@ if [ ! -d "$FILE" ]; then
 fi
 
 if [ -e "$ZIP" ]; then
-  unzip "$ZIP" -d $TMP
+  unzip -q "$ZIP" -d $TMP
 fi
 
-echo cp -r $FILE/. $TMP/$TIME
 cp -r $FILE/. $TMP/$TIME
 
 here=`pwd`
 cd $TMP
-zip -r $here/$ZIP *
+zip -rq $here/$ZIP *
 cd $here
 
 rm -r $TMP/*
