@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import os.path
 import os
 import fileinput
-from subprocess import run, PIPE
+from subprocess import PIPE, Popen, run
 from shutil import rmtree
 
 import pygments
@@ -79,7 +79,7 @@ def add_strongs(strong_lines, codehtmlfile):
 def main(zipfile, source):
     '''(str, str) Accepts 2 file paths
     Returns nothing
-    For each version of source, store code and output on disk
+    For each version of source, store code and output on disk in HTML format
     '''
     zipfile = zipfile.replace('.zip', '')
     zipdir = ziproot + '/' + os.path.basename(zipfile)
@@ -91,6 +91,7 @@ def main(zipfile, source):
         os.makedirs(savedir)
 
     run(['unzip', '-u', '-o', '-d', zipdir, zipfile])  # unzip automatically adds extension
+
     for version in os.listdir(zipdir):
         original = zipdir + '/' + version
         saves = savedir + '/' + version
@@ -102,11 +103,12 @@ def main(zipfile, source):
 
         # not required
         try:
-            run([original + '/' + compile_snap])
+            Popen([original + '/' + compile_snap], cwd=original)
         except FileNotFoundError:
             pass
         try:
-            output = run([original + '/' + run_snap], stdout=PIPE).stdout.decode()
+            output = Popen([original + '/' + run_snap], stdout=PIPE,
+                           cwd=original).stdout.decode()
         except FileNotFoundError:
             output = ''
 
