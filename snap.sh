@@ -21,11 +21,12 @@ if [ -a "$2" ]; then
   unzip "$ZIP" $TMP
 fi
 
-cp ${FILE}/* ${TMP}/${TIME}
+echo cp -r ${FILE}/. ${TMP}/${TIME}
+cp -r ${FILE}/. ${TMP}/${TIME}
 
 here=`pwd`
 cd $TMP
 zip -r ${here}/${ZIP} *
 cd $here
 
-rm -rf ${TMP}/*
+rm -r ${TMP}/*
