@@ -6,7 +6,7 @@ TMP=.tmpsnap
 TIME=`date +%s`
 
 if [ "$#" -lt "2" ]; then
-  echo "Usage: snap [directory] [zipfile]";
+  echo "Usage: snap <directory> <zipfile>";
   exit 1;
 fi
 
