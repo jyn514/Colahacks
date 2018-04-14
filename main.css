@@ -1,0 +1,13 @@
+html, body {
+  max-height: 100vh;
+}
+.listpanel , .codepanel, .output{
+  max-height: 100vh;
+  overflow-y: scroll;
+}
+.listpanel {
+  overflow-x: hidden;
+}
+.codepanel {
+  word-wrap:break-word;
+}
