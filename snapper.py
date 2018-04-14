@@ -16,6 +16,24 @@ saveroot = root + '/snaps'
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
 
+def file_diff(codefile, prevcodefile):
+    '''
+    Diffs the code file to previous code file then returns list of tuples with
+        lines which are changes
+    Parameters are both strings containing valid paths to code source
+    '''
+    with code, prevcode as open(codefile, "r"), open(prevcodefile, "r"):
+        pass #TODO(HD)
+
+def add_strongs(strong_lines, codehtmlfile):
+    '''
+    Parses html which is result of pygments to add html strong tags at specified
+        strong_lines
+    Parameter strong_lines is list of integer pairs which have [start, end)
+        line numbers starting from index 0
+    '''
+    pass #TODO(HD)
+
 def main(zipfile, source):
     '''(str, str) Accepts 2 file paths
     Returns nothing
@@ -31,7 +49,6 @@ def main(zipfile, source):
         os.makedirs(savedir)
 
     run(['unzip', '-u', '-o', '-d', zipdir, zipfile])  # unzip automatically adds extension
-    
     for version in os.listdir(zipdir):
         original = zipdir + '/' + version
         saves = savedir + '/' + version
