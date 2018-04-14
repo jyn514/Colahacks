@@ -9,6 +9,10 @@ Email:     brennan@brennancain.com
   if (session_status() == PHP_SESSION_NONE) {
     session_start();
   }
+  if(isset($_GET["clear"]))
+  {
+    session_unset();
+  }
 
   if(isset($_POST["project"]))
   {
@@ -56,6 +60,21 @@ Email:     brennan@brennancain.com
           </tr>
         </table>
       </form>
+      <?php
+      $dir = "snaps/";
+      if (is_dir($dir)){
+        if ($dh = opendir($dir)){
+          echo("<ul>");
+          while (($project = readdir($dh)) !== false){
+            if($project[0]!==".")
+            {
+              echo("<li><a href='index.php?project=$project'>$project</a></li>");
+            }
+          }
+          echo("</ul>");
+        }
+      }
+          ?>
       <hr>
 
       <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
@@ -75,7 +94,14 @@ Email:     brennan@brennancain.com
             closedir($dh);
             $currentIndex=0;
             if(isset($_SESSION["slide"])) {
-              $currentIndex=array_search($_SESSION["slide"],$files);//gets index of slide
+              if($_SESSION["slide"]===0)
+              {
+                $currentIndex=$files[0];
+              }
+              else
+              {
+                $currentIndex=array_search($_SESSION["slide"],$files);//gets index of slide
+              }
             }
             echo("<div class='col-md-6'>");
             if($currentIndex>0){
@@ -129,7 +155,11 @@ Email:     brennan@brennancain.com
           </tr>
         </table>
       </form>
-
+      <br>
+      <form action="index.php" method="get">
+        <input type="text" name="clear" value="kill" hidden/></td>
+        <td><input value="Exit" type='submit'></td>
+      </form>
     </div>
     <div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
       <h2>Code</h2>

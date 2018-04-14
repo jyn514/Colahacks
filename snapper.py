@@ -1,13 +1,10 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
-
 from argparse import ArgumentParser
 import os.path
 import os
 import fileinput
 from subprocess import PIPE, Popen, run
 from shutil import rmtree
+import sys
 
 import pygments
 from pygments.lexers import get_lexer_for_filename
@@ -69,11 +66,9 @@ def add_strongs(strong_lines, codehtmlfile):
                     #TODO(HD) deal with the div,pre on first line
                 if state == 'START' and number == current[0]:
                     line = '<strong>' + line
-                    modified = True
                     state = 'END'
                 if state == 'END' and number + 1 == current[1]:
                     line += '</strong>'
-                    modified = True
                     state = 'START'
                     i += 1
             if number == 0:
@@ -95,9 +90,10 @@ def main(zipfile, source):
         os.makedirs(savedir)
 
     run(['unzip', '-u', '-o', '-q', '-d', zipdir, zipfile])  # unzip automatically adds extension
+    run(['chmod', '-R', '777', zipdir])
 
     previous = None
-    for version in os.listdir(zipdir):
+    for version in sorted(os.listdir(zipdir)):
         original = zipdir + '/' + version
         saves = savedir + '/' + version
 
@@ -119,7 +115,7 @@ def main(zipfile, source):
             output = ''
 
         pygments.highlight(output, BashLexer(), HtmlFormatter(), open(saves + '/output.html', 'x'))
-        code = '\n'.join(open(original + '/' + source).readlines())
+        code = ''.join(open(original + '/' + source).readlines())
         code = pygments.highlight(code, get_lexer_for_filename(source), HtmlFormatter(), open(saves + '/code.html', 'x'))
 
         # add bolding
@@ -128,10 +124,11 @@ def main(zipfile, source):
             add_strongs(diff_result, saves + '/code.html')
 
         previous = original
+    return "complete"
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(__doc__)
     parser.add_argument("zipfile")
     parser.add_argument("source")
-    main(**parser.parse_args().__dict__)
+    print(main(**parser.parse_args().__dict__))

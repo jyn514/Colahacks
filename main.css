@@ -11,3 +11,7 @@ html, body {
 .codepanel {
   word-wrap:break-word;
 }
+
+.highlight {
+  font-size: 16pt;
+}

@@ -1,11 +1,17 @@
 <?php
 $filename = $_POST["filename"];
 $zipname = basename($_FILES["zip"]["name"]);
-echo $filename . " F";
-echo $zipname . " Z";
+$project = pathinfo($zipname, PATHINFO_FILENAME);
+echo("File: $filename<br>");
+echo("Zip: $zipname<br>");
+echo("Project: $project<br>");
+echo("<br>Please wait while your files are processed...");
 move_uploaded_file($_FILES["zip"]["tmp_name"],"zipfiles/$zipname");
-
-echo system("python3 snapper.py zipfiles/$zipname $filename");
-
-header("Location: index.php?project=$zipname");
-die();
+system("chmod 777 zipfiles/$zipname");
+echo "done 777";
+system("./snappy.sh $zipname $filename");
+echo "done snapper";
+$_SESSION["slide"]=0;
+$_SESSION["project"]=$project;
+header("Location: /");
+die("We done");
