@@ -10,11 +10,11 @@ from pygments.lexers import get_lexer_for_filename
 from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
-root = '/home/joshua/var/www/html'
-ziproot = root + '/zip'
-saveroot = root + '/snaps'
+ziproot = 'zip'
+saveroot = 'snaps'
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
+diff = 'diff'
 
 def file_diff(codefile, prevcodefile):
     '''
@@ -22,8 +22,7 @@ def file_diff(codefile, prevcodefile):
         lines which are changes
     Parameters are both strings containing valid paths to code source
     '''
-    with code, prevcode as open(codefile, "r"), open(prevcodefile, "r"):
-        pass #TODO(HD)
+    pass #TODO(HD)
 
 def add_strongs(strong_lines, codehtmlfile):
     '''
