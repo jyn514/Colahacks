@@ -36,15 +36,15 @@ def add_strongs(strong_lines, codehtmlfile):
     current = strong_lines[0]
     state = 'START'
     with fileinput.input([codehtmlfile]) as f:
-    for number, line in enumerate(f):
-        if state == 'START' and number == current[0]:
-            line = '<strong>' + line
-            state = 'END'
-        elif state == 'END' and number == current[1]:
-            line += '</strong>'
-            state = 'START'
-            i += 1
-            current = strong_lines[i]
+        for number, line in enumerate(f):
+            if state == 'START' and number == current[0]:
+                line = '<strong>' + line
+                state = 'END'
+            elif state == 'END' and number == current[1]:
+                line += '</strong>'
+                state = 'START'
+                i += 1
+                current = strong_lines[i]
 
 def main(zipfile, source):
     '''(str, str) Accepts 2 file paths
