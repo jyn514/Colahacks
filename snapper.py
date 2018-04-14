@@ -54,18 +54,27 @@ def add_strongs(strong_lines, codehtmlfile):
     i = 0
     current = strong_lines[0]
     state = 'START'
-    with fileinput.input([codehtmlfile]) as f:
+    prefix = '<div class="highlight"><pre>'
+    with fileinput.input(codehtmlfile) as f:
         for number, line in enumerate(f):
-            if state == 'START' and number == current[0]:
-                line = '<strong>' + line
-                state = 'END'
-            elif state == 'END' and number == current[1]:
-                line += '</strong>'
-                state = 'START'
-                i += 1
-                if i >= len(strong_lines):
-                    break
+            if i < len(strong_lines):
                 current = strong_lines[i]
+                line = line.strip()
+                if number == 0:
+                    line = line[len(prefix):]
+                    #TODO(HD) deal with the div,pre on first line
+                if state == 'START' and number == current[0]:
+                    line = '<strong>' + line
+                    modified = True
+                    state = 'END'
+                if state == 'END' and number + 1 == current[1]:
+                    line += '</strong>'
+                    modified = True
+                    state = 'START'
+                    i += 1
+            if number == 0:
+                line = prefix + line
+            print(line)
 
 def main(zipfile, source):
     '''(str, str) Accepts 2 file paths
