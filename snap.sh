@@ -19,7 +19,7 @@ if [ ! -d "$FILE" ]; then
 fi
 
 if [ -e "$ZIP" ]; then
-  unzip "$ZIP" $TMP
+  unzip "$ZIP" -d $TMP
 fi
 
 echo cp -r $FILE/. $TMP/$TIME
