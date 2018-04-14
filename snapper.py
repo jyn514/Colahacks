@@ -22,7 +22,26 @@ def file_diff(codefile, prevcodefile):
         lines which are changes
     Parameters are both strings containing valid paths to code source
     '''
-    pass #TODO(HD)
+    output = run([diff, codefile, prevcodefile], stdout=PIPE).stdout.decode()
+    changes = []
+    for line in output.split():
+        if len(line) <= 0 or line[0] in "<>- ":
+            continue  #Break because we only want the numbers of where diffs are
+        for i in range(len(line)):
+            if line[i] in "ac":
+                #This is an addition or change so use it
+                indeces = [int(x) for x in line[i+1:].strip().split(',')]
+                if len(indeces) == 1:
+                    end = int(indeces[0])
+                    start = end - 1
+                elif len(indeces) == 2:
+                    start = indeces[0] - 1
+                    end = indeces[1]
+                else:
+                    print("Diff output is weird")
+                changes.append((start, end))
+                break
+    return changes
 
 def add_strongs(strong_lines, codehtmlfile):
     '''
