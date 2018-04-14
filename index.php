@@ -45,7 +45,7 @@ Email:     brennan@brennancain.com
 </head>
 <body onLoad="loaded()">
     <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
-      <h1>Snapper</h1>
+      <a href="/"><h1>Snapper</h1></a>
 
       <!-- OPEN PROJECT SECTION -->
       <form action="index.php" method="post">
