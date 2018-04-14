@@ -2,6 +2,7 @@
 from argparse import ArgumentParser
 import os.path
 import os
+import fileinput
 from subprocess import run, PIPE
 from shutil import rmtree
 
@@ -31,7 +32,19 @@ def add_strongs(strong_lines, codehtmlfile):
     Parameter strong_lines is list of integer pairs which have [start, end)
         line numbers starting from index 0
     '''
-    pass #TODO(HD)
+    i = 0
+    current = strong_lines[0]
+    state = 'START'
+    with fileinput.input([codehtmlfile]) as f:
+    for number, line in enumerate(f):
+        if state == 'START' and number == current[0]:
+            line = '<strong>' + line
+            state = 'END'
+        elif state == 'END' and number == current[1]:
+            line += '</strong>'
+            state = 'START'
+            i += 1
+            current = strong_lines[i]
 
 def main(zipfile, source):
     '''(str, str) Accepts 2 file paths
@@ -54,7 +67,11 @@ def main(zipfile, source):
         if os.path.isdir(saves):
             rmtree(saves)
         os.makedirs(saves)
+        if os.path.isdir(original):
+            rmtree(original)
+        os.makedirs(original)
         try:
+            print(original)
             run([original + '/' + compile_snap])
         except FileNotFoundError:
             pass
