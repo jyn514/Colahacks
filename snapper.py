@@ -108,12 +108,13 @@ def main(zipfile, source):
 
         # not required
         try:
-            Popen([original + '/' + compile_snap], cwd=original)
+            Popen(['./' + compile_snap], cwd=original)
         except FileNotFoundError:
             pass
         try:
-            output = Popen([original + '/' + run_snap], stdout=PIPE,
-                           cwd=original).stdout.decode()
+            output = Popen(['./' + run_snap], stdout=PIPE,
+                           cwd=original).stdout
+            output = '\n'.join(i.decode() for i in output)
         except FileNotFoundError:
             output = ''
 
