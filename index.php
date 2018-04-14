@@ -93,7 +93,7 @@ Email:     brennan@brennancain.com
       <hr>
 
       <!-- ZIP UPLOAD SECTION -->
-      <form action="index.php" method="post">
+      <form action="upload.php" method="post">
         <table>
           <tr>
             <td>Zip file:</td>
