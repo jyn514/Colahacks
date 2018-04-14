@@ -44,6 +44,8 @@ def add_strongs(strong_lines, codehtmlfile):
                 line += '</strong>'
                 state = 'START'
                 i += 1
+                if i >= len(strong_lines):
+                    break
                 current = strong_lines[i]
 
 def main(zipfile, source):
