@@ -80,14 +80,14 @@ Email:     brennan@brennancain.com
             echo("<div class='col-md-6'>");
             if($currentIndex>0){
               $prev = $files[$currentIndex-1];
-              echo("<a href='index.php?slide=$prev'><span class='glyphicon glyphicon-align-left' aria-hidden='true'></span>");
+              echo("<a href='index.php?slide=$prev'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span>");
             }
             echo("</div>");
             echo("<div class='col-md-6'>");
             if($currentIndex<count($files)-1)
             {
               $next = $files[$currentIndex+1];
-              echo("<a href='index.php?slide=$next'><span class='glyphicon glyphicon-align-right' aria-hidden='true'></span></a>");
+              echo("<a href='index.php?slide=$next'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>");
             }
             echo("</div><br>");
 
