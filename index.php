@@ -6,6 +6,10 @@ Email:     brennan@brennancain.com
 <html>
 <head>
   <?php
+  if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+  }
+
   if(isset($_POST["project"]))
   {
     $_SESSION["project"] = $_POST["project"];
@@ -13,6 +17,14 @@ Email:     brennan@brennancain.com
   if(isset($_POST["slide"]))
   {
     $_SESSION["slide"] = $_POST["slide"];
+  }
+  if(isset($_GET["project"]))
+  {
+    $_SESSION["project"] = $_GET["project"];
+  }
+  if(isset($_GET["slide"]))
+  {
+    $_SESSION["slide"] = $_GET["slide"];
   }
   ?>
   <meta charset="UTF-8">
@@ -25,6 +37,8 @@ Email:     brennan@brennancain.com
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
 
   <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="highlights.css">
+
   <!-- Latest compiled and minified JavaScript -->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
@@ -52,36 +66,42 @@ Email:     brennan@brennancain.com
           if ($dh = opendir($dir)){
             $files = array();
             while (($file = readdir($dh)) !== false){
-              array_push($files,$file);
+              if($file[0]!==".")
+              {
+                array_push($files,$file);
+              }
             }
+            sort($files);
             closedir($dh);
-
-
-            $currentIndex=array_search($_SESSION["slide"]);//gets index of slide
+            $currentIndex=0;
+            if(isset($_SESSION["slide"])) {
+              $currentIndex=array_search($_SESSION["slide"],$files);//gets index of slide
+            }
             echo("<div class='col-md-6'>");
-            if($currentIndex>0 and $currentIndex){
-              echo("<a href='" . $files[$currentIndex-1] ."'><span class='glyphicon glyphicon-align-left' aria-hidden='true'></span>");
+            if($currentIndex>0){
+              $prev = $files[$currentIndex-1];
+              echo("<a href='index.php?slide=$prev'><span class='glyphicon glyphicon-align-left' aria-hidden='true'></span>");
             }
             echo("</div>");
             echo("<div class='col-md-6'>");
-            if($currentIndex<count($files))
+            if($currentIndex<count($files)-1)
             {
-              echo("<a href='" . files[$currentIndex+1] ."'<span class='glyphicon glyphicon-align-right' aria-hidden='true'></span>");
+              $next = $files[$currentIndex+1];
+              echo("<a href='index.php?slide=$next'><span class='glyphicon glyphicon-align-right' aria-hidden='true'></span></a>");
             }
-            echo("</div>");
-
+            echo("</div><br>");
 
             echo("<ul>\n");
             for($i=0; $i<count($files);$i++) {// CREATE LIST OF SLIDES HERE
               $file=$files[$i];
               if($file==$_SESSION["slide"]) {
-                echo("<li><strong>$file</strong></li>\n");
+                echo("<li><a href='index.php?slide=$file'><strong>$file</strong></a></li>\n");
               }
               else {
-                echo("<li>$file</li>\n");
+                echo("<li><a href='index.php?slide=$file'>$file</a></li>\n");
               }
             }
-            echo("<ul>\n");
+            echo("</ul><br>");
           }
           else("Could not open directory");
         }
@@ -91,7 +111,7 @@ Email:     brennan@brennancain.com
       }
       ?>
       <hr>
-
+      <br>
       <!-- ZIP UPLOAD SECTION -->
       <form action="upload.php" method="post" enctype="multipart/form-data">
         <table>
@@ -119,10 +139,6 @@ Email:     brennan@brennancain.com
       <?php
       if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
         include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/code.html");
-      }
-      for($i =0; $i<100;$i++)
-      {
-        echo("<li>".$i."</li>");
       }
       ?>
     </ol>
