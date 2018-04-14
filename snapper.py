@@ -85,22 +85,22 @@ def main(zipfile, source):
     for version in os.listdir(zipdir):
         original = zipdir + '/' + version
         saves = savedir + '/' + version
+
+        # overwrite existing
         if os.path.isdir(saves):
             rmtree(saves)
         os.makedirs(saves)
-        if os.path.isdir(original):
-            rmtree(original)
-        os.makedirs(original)
+
+        # not required
         try:
-            print(original)
             run([original + '/' + compile_snap])
         except FileNotFoundError:
             pass
-        # decode required so string, not bytes
         try:
             output = run([original + '/' + run_snap], stdout=PIPE).stdout.decode()
         except FileNotFoundError:
             output = ''
+
         pygments.highlight(output, BashLexer(), HtmlFormatter(), open(saves + '/output.html', 'x'))
         code = '\n'.join(open(original + '/' + source).readlines())
         code = pygments.highlight(code, get_lexer_for_filename(source), HtmlFormatter(), open(saves + '/code.html', 'x'))
