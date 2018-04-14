@@ -24,13 +24,16 @@ Email:     brennan@brennancain.com
   <!-- Optional theme -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
 
+  <link rel="stylesheet" href="main.css">
   <!-- Latest compiled and minified JavaScript -->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
 </head>
-<body>
-  <div class="row" style="height:100%; width: 100%">
-    <div class="col-md-2" style="top: 0; bottom:0; overflow-y: scroll;">
+<body onLoad="loaded()">
+    <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
       <h1>Snapper</h1>
+
+      <!-- OPEN PROJECT SECTION -->
       <form action="index.php" method="post">
         <table>
           <tr>
@@ -39,6 +42,9 @@ Email:     brennan@brennancain.com
           </tr>
         </table>
       </form>
+      <hr>
+
+      <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
       <?php
       if(isset($_SESSION["project"])) {
         $dir = "snaps/" . $_SESSION["project"];
@@ -50,13 +56,20 @@ Email:     brennan@brennancain.com
             }
             closedir($dh);
 
-            /*
+
             $currentIndex=array_search($_SESSION["slide"]);//gets index of slide
             echo("<div class='col-md-6'>");
-            if($currentIndex>0 and !$currentIndex){
-              echo "<span class="glyphicon glyphicon-align-left" aria-hidden="true"></span>"
+            if($currentIndex>0 and $currentIndex){
+              echo("<a href='" . $files[$currentIndex-1] ."'><span class='glyphicon glyphicon-align-left' aria-hidden='true'></span>");
             }
-            */
+            echo("</div>");
+            echo("<div class='col-md-6'>");
+            if($currentIndex<count($files))
+            {
+              echo("<a href='" . files[$currentIndex+1] ."'<span class='glyphicon glyphicon-align-right' aria-hidden='true'></span>");
+            }
+            echo("</div>");
+
 
             echo("<ul>\n");
             for($i=0; $i<count($files);$i++) {// CREATE LIST OF SLIDES HERE
@@ -77,18 +90,45 @@ Email:     brennan@brennancain.com
         }
       }
       ?>
+      <hr>
+
+      <!-- ZIP UPLOAD SECTION -->
+      <form action="index.php" method="post">
+        <table>
+          <tr>
+            <td>Zip file:</td>
+            <td><input type="file" name="zip"/></td>
+          </tr>
+          <tr>
+            <td>Trackable file:</td>
+            <td><input type="text" name="filename"/></td>
+          </tr>
+          <tr>
+            <td>&nbsp;</td>
+            <td><input value="open" type='submit'></td>
+          </tr>
+        </table>
+      </form>
 
     </div>
-    <div class="col-md-5" style="top: 0; bottom:0; overflow-y: scroll;">
+    <div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
       <h2>Code</h2>
       <hr>
+      <div id="codepanel">
+        <ol>
       <?php
       if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
         include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/code.html");
       }
+      for($i =0; $i<100;$i++)
+      {
+        echo("<li>".$i."</li>");
+      }
       ?>
+    </ol>
+  </div>
     </div>
-    <div class="col-md-5" style="top: 0; bottom:0; overflow-y: scroll;">
+    <div class="col-md-5 outputpanel" style="top: 0; bottom:0; overflow-y: scroll;">
       <h2>Output</h2>
       <hr>
       <?php
@@ -97,7 +137,6 @@ Email:     brennan@brennancain.com
       }
       ?>
     </div>
-  </div>
 
 </body>
 </html>
