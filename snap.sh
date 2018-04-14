@@ -7,12 +7,12 @@ TIME=`date +%s`
 
 if [ "$#" -lt "2" ]; then
   echo "Usage: snap [directory] [zipfile]";
-  exit -1;
+  exit 1;
 fi
 
 if [ ! -d "$FILE" ]; then
   echo "Cannot take snapshot of $FILE";
-  exit -1;
+  exit 1;
 fi
 
 mkdir -p $TMP
