@@ -51,15 +51,16 @@ def add_strongs(strong_lines, codehtmlfile):
     Parameter strong_lines is list of integer pairs which have [start, end)
         line numbers starting from index 0
     '''
+    if len(strong_lines) == 0:
+        return
     i = 0
     current = strong_lines[0]
     state = 'START'
     prefix = '<div class="highlight"><pre>'
-    with fileinput.input(codehtmlfile) as f:
+    with fileinput.input(codehtmlfile, inplace=True) as f:
         for number, line in enumerate(f):
             if i < len(strong_lines):
                 current = strong_lines[i]
-                line = line.strip()
                 if number == 0:
                     line = line[len(prefix):]
                     #TODO(HD) deal with the div,pre on first line
@@ -74,7 +75,7 @@ def add_strongs(strong_lines, codehtmlfile):
                     i += 1
             if number == 0:
                 line = prefix + line
-            print(line)
+            print(line, end='')
 
 def main(zipfile, source):
     '''(str, str) Accepts 2 file paths
@@ -90,8 +91,9 @@ def main(zipfile, source):
     if not os.path.isdir(savedir):
         os.makedirs(savedir)
 
-    run(['unzip', '-u', '-o', '-d', zipdir, zipfile])  # unzip automatically adds extension
+    run(['unzip', '-u', '-o', '-q', '-d', zipdir, zipfile])  # unzip automatically adds extension
 
+    previous = None
     for version in os.listdir(zipdir):
         original = zipdir + '/' + version
         saves = savedir + '/' + version
@@ -115,6 +117,13 @@ def main(zipfile, source):
         pygments.highlight(output, BashLexer(), HtmlFormatter(), open(saves + '/output.html', 'x'))
         code = '\n'.join(open(original + '/' + source).readlines())
         code = pygments.highlight(code, get_lexer_for_filename(source), HtmlFormatter(), open(saves + '/code.html', 'x'))
+
+        # add bolding
+        if previous is not None:
+            diff_result = file_diff(previous + '/' + source, original + '/' + source)
+            add_strongs(diff_result, saves + '/code.html')
+
+        previous = original
 
 
 if __name__ == '__main__':
