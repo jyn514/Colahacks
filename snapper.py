@@ -2,7 +2,7 @@
 import os
 import fileinput
 from subprocess import PIPE, Popen, run
-from shutil import rmtree
+from shutil import rmtree, copyfile
 import sys
 import shlex
 
@@ -11,8 +11,8 @@ from pygments.lexers import get_lexer_for_filename
 from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
-cacheroot = '.cache'
-saveroot = 'snaps'
+cacheroot = os.path.expanduser('~/.cache/snap')  # for www-data, ~ defaults to /var/www
+saveroot = 'snaps'  # this can be made absolute without a problem
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
 
@@ -90,8 +90,7 @@ def get_commit(treeish='HEAD', directory='.'):
     return output_to_string(Popen(args, stdout=PIPE, cwd=directory).stdout).split(' ')[0]
 
 
-def checkout(f, previous, current, directory):
-    '''TODO: take list as a parameter, this is a mess and super slow'''
+def checkout(files, previous, current, directory):
     # don't change HEAD, just get files
     directory = os.path.realpath(directory)
     subdir = '/' + os.path.basename(directory)
@@ -105,30 +104,68 @@ def checkout(f, previous, current, directory):
     if not os.path.isdir(savedir):
         os.makedirs(savedir)
 
-    html = "%s/%s" % (savedir, f)  # NOTE: preserves extension
-    if not os.path.exists(html):
-        Popen(['git', 'checkout', current, f], cwd=tmpdir)
-        with open(tmpdir + '/' + f) as original:
-            code = ''.join(original.readlines())  # NOTE: preserves newlines
-        with open(html, 'x') as result:
-            pygments.highlight(code, get_lexer_for_filename(f), HtmlFormatter(), result)
-    if not os.path.exists(html + '.diff'):
-        with open(html + '.diff', 'x') as diff:
-            Popen(['git', 'diff', previous, current, f],
-                    cwd=tmpdir, stdout=diff)
+    for f in files:
+        html = savedir + '/' + f  # NOTE: preserves extension
+        if not os.path.exists(html):
+            Popen(['git', 'checkout', current, f], cwd=tmpdir)  # makes directories if necessary
+
+            tmpfile = tmpdir + '/' + f
+
+            # only time we handle this ourselves; necessary because f could be in subdir
+            dirname = os.path.dirname(html)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+
+            try:
+                with open(tmpfile) as original:
+                    code = ''.join(original.readlines())  # NOTE: preserves newlines
+                lexer = guess_lexer_for_filename(f, f)
+                with open(html, 'x') as result:
+                    pygments.highlight(code, lexer, HtmlFormatter(), result)
+            except (UnicodeDecodeError, ClassNotFound):  # don't mess with binaries
+                copyfile(tmpfile, html)
+
+            # do this even if binary; git shows metadata change
+            # TODO: cut back on wasteful IO
+            diff = html + '.diff'
+            with open(diff, 'x') as diff_file:
+                Popen(['git', 'diff', previous, current, f],
+                      cwd=tmpdir, stdout=diff_file)
+            if not os.stat(diff).st_size:
+                os.remove(diff)
+
+    return savedir, tmpdir
 
 
-def checkout_all(files, previous, current, directory):
+def tracked(f, commit, cwd):
+    '''Tell if an object is tracked in commit'''
+    output = output_to_string(Popen(['git', 'ls-tree', commit, f], cwd=cwd,
+                                    stdout=PIPE).stdout)
+    return not (output is None or output == '')
+
+def flatten(files, commit, directory):
+    '''iterable, str, str -> list(str)
+    turn directories into top-level files
+    If files are untracked by git, discard with warning'''
+    result = []
     for f in files:
         if os.path.isdir(f):
             # get only top-level files
-            checkout_all(os.walk(f).__next__()[2], previous, current, directory)
+            # TODO: python has terribly support for recursion, make this a while loop
+            output = Popen(['git', 'ls-tree', '--name-only', commit, f + '/'],
+                            cwd=directory, stdout=PIPE).stdout
+            # bytes to str, discarding newline
+            result += flatten((b.decode()[:-1] for b in output), commit, directory)
+        elif not tracked(f, commit, directory):
+            print("WARNING: passed '%s' which is not tracked by git. Discarding." % f,
+                  file=sys.stderr)
+            print("cwd:", directory, "commit:", commit)
         else:
-            checkout(f, previous, current, directory)
+            result += [f]
+    return result
 
 
 def compile_and_run(tmpdir):
-    '''TODO: should copy first then compile'''
     # not required
     try:
         Popen(['./' + compile_snap], cwd=tmpdir)
@@ -162,9 +199,10 @@ def main(directory='.', commit="HEAD", previous="HEAD", files='.'):
     '''
     if not isinstance(files, list):
         files = shlex.split(files)
+    files = flatten(files, commit, directory)
 
-    checkout_all(files, previous, commit, directory)
-    output = compile_and_run()
+    savedir, tmpdir = checkout(files, previous, commit, directory)
+    output = compile_and_run(tmpdir)
 
     output_path = savedir + '/output.html'
     if not os.path.exists(output_path):
