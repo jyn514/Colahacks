@@ -7,7 +7,6 @@ import sys
 import shlex
 
 import pygments
-from pygments.lexers import get_lexer_for_filename
 from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
@@ -119,10 +118,11 @@ def checkout(files, previous, current, directory):
             try:
                 with open(tmpfile) as original:
                     code = ''.join(original.readlines())  # NOTE: preserves newlines
-                lexer = guess_lexer_for_filename(f, f)
+                lexer = pygments.lexers.guess_lexer_for_filename(f, f)
                 with open(html, 'x') as result:
                     pygments.highlight(code, lexer, HtmlFormatter(), result)
-            except (UnicodeDecodeError, ClassNotFound):  # don't mess with binaries
+            except (UnicodeDecodeError, pygments.util.ClassNotFound):
+            # don't mess with binaries
                 copyfile(tmpfile, html)
 
             # do this even if binary; git shows metadata change
@@ -150,16 +150,14 @@ def flatten(files, commit, directory):
     result = []
     for f in files:
         if os.path.isdir(f):
-            # get only top-level files
             # TODO: python has terribly support for recursion, make this a while loop
             output = Popen(['git', 'ls-tree', '--name-only', commit, f + '/'],
-                            cwd=directory, stdout=PIPE).stdout
+                           cwd=directory, stdout=PIPE).stdout
             # bytes to str, discarding newline
             result += flatten((b.decode()[:-1] for b in output), commit, directory)
         elif not tracked(f, commit, directory):
             print("WARNING: passed '%s' which is not tracked by git. Discarding." % f,
                   file=sys.stderr)
-            print("cwd:", directory, "commit:", commit)
         else:
             result += [f]
     return result
@@ -174,12 +172,12 @@ def compile_and_run(tmpdir):
     # we assume that all output will come from stdout of run_snap
     try:
         return output_to_string(Popen(['./' + run_snap], stdout=PIPE,
-                                cwd=tmpdir).stdout)
+                                      cwd=tmpdir).stdout)
     except FileNotFoundError:
         return ''
 
 
-def main(directory='.', commit="HEAD", previous="HEAD", files='.'):
+def main(directory, commit="HEAD", previous="HEAD", files='.'):
     '''(str, str) -> None
     files should be one of:
         - list of file names (basename only, no directory path)
@@ -215,8 +213,7 @@ def main(directory='.', commit="HEAD", previous="HEAD", files='.'):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser(__doc__)
-    parser.add_argument("directory", help='must have a git repository', default='.',
-                        nargs='?')
+    parser.add_argument("directory", help='must have a git repository')
     parser.add_argument("commit", default="HEAD", nargs='?',
                         help='treeish (see `man gitglossary` for help)')
     #parser.add_argument('--reset', action='store_true')
