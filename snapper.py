@@ -10,8 +10,8 @@ import pygments
 from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
-cacheroot = os.path.expanduser('~/.cache/snap')  # for www-data, ~ defaults to /var/www
-saveroot = 'snaps'  # this can be made absolute without a problem
+CACHE_ROOT = os.path.expanduser('/tmp/snap')  # for www-data, ~ defaults to /var/www
+SAVE_ROOT = 'snaps'  # this can be made absolute without a problem
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
 
@@ -89,31 +89,32 @@ def get_commit(treeish='HEAD', directory='.'):
     return output_to_string(Popen(args, stdout=PIPE, cwd=directory).stdout).split(' ')[0]
 
 
+def mkdir_p(*directories):
+    '''Replicate functionality of `mkdir -p directory`'''
+    for directory in directories:
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+
+
 def checkout(files, previous, current, directory):
-    # don't change HEAD, just get files
     directory = os.path.realpath(directory)
     subdir = '/' + os.path.basename(directory)
-    savedir = saveroot + subdir + '/' + get_commit(current)
-    tmpdir = cacheroot + subdir
+    savedir = SAVE_ROOT + subdir + '/' + get_commit(current)
+    tmpdir = CACHE_ROOT + subdir
+    del subdir
 
-    if not os.path.isdir(tmpdir):
-        os.makedirs(tmpdir)
-        with open(tmpdir + '/.git', 'w') as git:
-            git.write('gitdir: ' + directory + '/.git\n')
-    if not os.path.isdir(savedir):
-        os.makedirs(savedir)
+    mkdir_p(savedir, tmpdir)
 
     for f in files:
         html = savedir + '/' + f  # NOTE: preserves extension
         if not os.path.exists(html):
-            Popen(['git', 'checkout', current, f], cwd=tmpdir)  # makes directories if necessary
+            run(['git', '--work-tree', tmpdir, '--git-dir', directory + '/.git',
+                 'checkout', current, f])  # makes directories if necessary
 
             tmpfile = tmpdir + '/' + f
 
-            # only time we handle this ourselves; necessary because f could be in subdir
-            dirname = os.path.dirname(html)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+            # necessary: f could be in subdir of <directory>
+            mkdir_p(os.path.dirname(html))
 
             try:
                 with open(tmpfile) as original:
@@ -142,6 +143,7 @@ def tracked(f, commit, cwd):
     output = output_to_string(Popen(['git', 'ls-tree', commit, f], cwd=cwd,
                                     stdout=PIPE).stdout)
     return not (output is None or output == '')
+
 
 def flatten(files, commit, directory):
     '''iterable, str, str -> list(str)
@@ -189,11 +191,11 @@ def main(directory, commit="HEAD", previous="HEAD", files='.'):
     commit: tree-ish (see `man gitglossary`; usually commit, tag, or branch)
     previous: tree-ish
     output:
-        - html stored in saveroot/$(basename directory)/commit/filename
+        - html stored in SAVE_ROOT/$(basename directory)/commit/filename
             extension is preserved; does NOT end in HTML
-        - diff is stored saveroot/$(basename directory)/commit/filename.diff
+        - diff is stored SAVE_ROOT/$(basename directory)/commit/filename.diff
             example: main(files='data.csv') ->
-                     saveroot/$(realpath .)/$(git rev-parse -h HEAD)/data.csv.diff
+                     SAVE_ROOT/$(realpath .)/$(git rev-parse -h HEAD)/data.csv.diff
     '''
     if not isinstance(files, list):
         files = shlex.split(files)
