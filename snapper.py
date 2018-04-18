@@ -1,4 +1,3 @@
-from argparse import ArgumentParser
 import os.path
 import os
 import fileinput
@@ -15,7 +14,6 @@ ziproot = 'zip'
 saveroot = 'snaps'
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
-diff = 'diff'
 
 def file_diff(codefile, prevcodefile):
     '''
@@ -23,23 +21,23 @@ def file_diff(codefile, prevcodefile):
         lines which are changes
     Parameters are both strings containing valid paths to code source
     '''
-    output = run([diff, codefile, prevcodefile], stdout=PIPE).stdout.decode()
+    output = run(['diff', codefile, prevcodefile], stdout=PIPE).stdout.decode()
     changes = []
     for line in output.split():
         if len(line) <= 0 or line[0] in "<>- ":
-            continue  #Break because we only want the numbers of where diffs are
-        for i in range(len(line)):
-            if line[i] in "ac":
-                #This is an addition or change so use it
-                indeces = [int(x) for x in line[i+1:].strip().split(',')]
-                if len(indeces) == 1:
-                    end = int(indeces[0])
+            continue  # we only want the numbers of where diffs are
+        for i, char in enumerate(line):
+            if char in "ac":
+                # addition or change so use it
+                indices = [int(x) for x in line[i+1:].strip().split(',')]
+                if len(indices) == 1:
+                    end = int(indices[0])
                     start = end - 1
-                elif len(indeces) == 2:
-                    start = indeces[0] - 1
-                    end = indeces[1]
+                elif len(indices) == 2:
+                    start = indices[0] - 1
+                    end = indices[1]
                 else:
-                    print("Diff output is weird")
+                    print("Diff output is weird", file=sys.stderr)
                 changes.append((start, end))
                 break
     return changes
@@ -51,7 +49,7 @@ def add_strongs(strong_lines, codehtmlfile):
     Parameter strong_lines is list of integer pairs which have [start, end)
         line numbers starting from index 0
     '''
-    if len(strong_lines) == 0:
+    if not strong_lines:
         return
     i = 0
     current = strong_lines[0]
@@ -128,6 +126,7 @@ def main(zipfile, source):
 
 
 if __name__ == '__main__':
+    from argparse import ArgumentParser
     parser = ArgumentParser(__doc__)
     parser.add_argument("zipfile")
     parser.add_argument("source")
