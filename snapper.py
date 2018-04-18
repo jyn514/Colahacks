@@ -1,16 +1,17 @@
-import os.path
+#!/usr/bin/env python3
 import os
 import fileinput
 from subprocess import PIPE, Popen, run
 from shutil import rmtree
 import sys
+import shlex
 
 import pygments
 from pygments.lexers import get_lexer_for_filename
 from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
-ziproot = 'zip'
+cacheroot = '.cache'
 saveroot = 'snaps'
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
@@ -73,61 +74,113 @@ def add_strongs(strong_lines, codehtmlfile):
                 line = prefix + line
             print(line, end='')
 
-def main(zipfile, source):
-    '''(str, str) Accepts 2 file paths
-    Returns nothing
-    For each version of source, store code and output on disk in HTML format
-    '''
-    zipfile = zipfile.replace('.zip', '')
-    zipdir = ziproot + '/' + os.path.basename(zipfile)
-    savedir = saveroot + '/' + os.path.basename(zipfile)
 
-    if not os.path.isdir(zipdir):
-        os.makedirs(zipdir)
+def output_to_string(output):
+    '''bytes -> str'''
+    return '\n'.join(i.decode() for i in output)
+
+
+def get_commit(treeish='HEAD', directory='.'):
+    'str -> str'
+    args = ['git', 'show-ref']
+    if treeish == 'HEAD':
+        args += ['-h', 'HEAD']
+    else:
+        args += [treeish]
+    return output_to_string(Popen(args, stdout=PIPE, cwd=directory).stdout).split(' ')[0]
+
+
+def checkout(f, previous, current, directory):
+    '''TODO: take list as a parameter, this is a mess and super slow'''
+    # don't change HEAD, just get files
+    directory = os.path.realpath(directory)
+    subdir = '/' + os.path.basename(directory)
+    savedir = saveroot + subdir + '/' + get_commit(current)
+    tmpdir = cacheroot + subdir
+
+    if not os.path.isdir(tmpdir):
+        os.makedirs(tmpdir)
+        with open(tmpdir + '/.git', 'w') as git:
+            git.write('gitdir: ' + directory + '/.git\n')
     if not os.path.isdir(savedir):
         os.makedirs(savedir)
 
-    run(['unzip', '-u', '-o', '-q', '-d', zipdir, zipfile])  # unzip automatically adds extension
-    run(['chmod', '-R', '777', zipdir])
+    html = "%s/%s" % (savedir, f)  # NOTE: preserves extension
+    if not os.path.exists(html):
+        Popen(['git', 'checkout', current, f], cwd=tmpdir)
+        with open(tmpdir + '/' + f) as original:
+            code = ''.join(original.readlines())  # NOTE: preserves newlines
+        with open(html, 'x') as result:
+            pygments.highlight(code, get_lexer_for_filename(f), HtmlFormatter(), result)
+    if not os.path.exists(html + '.diff'):
+        with open(html + '.diff', 'x') as diff:
+            Popen(['git', 'diff', previous, current, f],
+                    cwd=tmpdir, stdout=diff)
 
-    previous = None
-    for version in sorted(os.listdir(zipdir)):
-        original = zipdir + '/' + version
-        saves = savedir + '/' + version
 
-        # overwrite existing
-        if os.path.isdir(saves):
-            rmtree(saves)
-        os.makedirs(saves)
+def checkout_all(files, previous, current, directory):
+    for f in files:
+        if os.path.isdir(f):
+            # get only top-level files
+            checkout_all(os.walk(f).__next__()[2], previous, current, directory)
+        else:
+            checkout(f, previous, current, directory)
 
-        # not required
-        try:
-            Popen(['./' + compile_snap], cwd=original)
-        except FileNotFoundError:
-            pass
-        try:
-            output = Popen(['./' + run_snap], stdout=PIPE,
-                           cwd=original).stdout
-            output = '\n'.join(i.decode() for i in output)
-        except FileNotFoundError:
-            output = ''
 
-        pygments.highlight(output, BashLexer(), HtmlFormatter(), open(saves + '/output.html', 'x'))
-        code = ''.join(open(original + '/' + source).readlines())
-        code = pygments.highlight(code, get_lexer_for_filename(source), HtmlFormatter(), open(saves + '/code.html', 'x'))
+def compile_and_run(tmpdir):
+    '''TODO: should copy first then compile'''
+    # not required
+    try:
+        Popen(['./' + compile_snap], cwd=tmpdir)
+    except FileNotFoundError:
+        pass
+    # we assume that all output will come from stdout of run_snap
+    try:
+        return output_to_string(Popen(['./' + run_snap], stdout=PIPE,
+                                cwd=tmpdir).stdout)
+    except FileNotFoundError:
+        return ''
 
-        # add bolding
-        if previous is not None:
-            diff_result = file_diff(previous + '/' + source, original + '/' + source)
-            add_strongs(diff_result, saves + '/code.html')
 
-        previous = original
+def main(directory='.', commit="HEAD", previous="HEAD", files='.'):
+    '''(str, str) -> None
+    files should be one of:
+        - list of file names (basename only, no directory path)
+        - str of CLI arguments exactly as normally passed to `git checkout`
+          Example: main('~', files='snappy.py README.md "file with spaces"')
+    directory can be either absolute or relative
+        WARNING: if $(basename directory) already exists AND has different git history,
+        hash collisions may occur; files from other project will be overwritten
+    commit: tree-ish (see `man gitglossary`; usually commit, tag, or branch)
+    previous: tree-ish
+    output:
+        - html stored in saveroot/$(basename directory)/commit/filename
+            extension is preserved; does NOT end in HTML
+        - diff is stored saveroot/$(basename directory)/commit/filename.diff
+            example: main(files='data.csv') ->
+                     saveroot/$(realpath .)/$(git rev-parse -h HEAD)/data.csv.diff
+    '''
+    if not isinstance(files, list):
+        files = shlex.split(files)
+
+    checkout_all(files, previous, commit, directory)
+    output = compile_and_run()
+
+    output_path = savedir + '/output.html'
+    if not os.path.exists(output_path):
+        with open(output_path, 'x') as output_file:
+            pygments.highlight(output, BashLexer(), HtmlFormatter(), output_file)
+
     return "complete"
 
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser(__doc__)
-    parser.add_argument("zipfile")
-    parser.add_argument("source")
-    print(main(**parser.parse_args().__dict__))
+    parser.add_argument("directory", help='must have a git repository', default='.',
+                        nargs='?')
+    parser.add_argument("commit", default="HEAD", nargs='?',
+                        help='treeish (see `man gitglossary` for help)')
+    #parser.add_argument('--reset', action='store_true')
+    print(main(**{k: v for k, v in parser.parse_args().__dict__.items()
+                  if v is not None}))
