@@ -12,8 +12,8 @@ from pygments.formatters import HtmlFormatter
 
 CACHE_ROOT = '/tmp/snap'
 SAVE_ROOT = '~/.cache/snap'
-compile_snap = 'makesnap.sh'
-run_snap = 'runsnap.sh'
+COMPILE = 'makesnap.sh'
+RUN = 'runsnap.sh'
 
 def file_diff(codefile, prevcodefile):
     '''
@@ -168,12 +168,12 @@ def flatten(files, commit, directory):
 def compile_and_run(tmpdir):
     # not required
     try:
-        Popen(['./' + compile_snap], cwd=tmpdir)
+        Popen(['./' + COMPILE], cwd=tmpdir)
     except FileNotFoundError:
         pass
-    # we assume that all output will come from stdout of run_snap
+    # we assume that all output will come from stdout of RUN
     try:
-        return output_to_string(Popen(['./' + run_snap], stdout=PIPE,
+        return output_to_string(Popen(['./' + RUN], stdout=PIPE,
                                       cwd=tmpdir).stdout)
     except FileNotFoundError:
         return ''
