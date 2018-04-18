@@ -10,8 +10,8 @@ import pygments
 from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
-CACHE_ROOT = os.path.expanduser('/tmp/snap')  # for www-data, ~ defaults to /var/www
-SAVE_ROOT = 'snaps'  # this can be made absolute without a problem
+CACHE_ROOT = '/tmp/snap'
+SAVE_ROOT = '~/.cache/snap'
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
 
