@@ -2,7 +2,7 @@
 import os
 import fileinput
 from subprocess import PIPE, Popen, run
-from shutil import rmtree, copyfile
+from shutil import copyfile
 import sys
 import shlex
 
@@ -117,7 +117,7 @@ def checkout(files, previous, current, directory):
             mkdir_p(os.path.dirname(html))
 
             try:
-                with open(tmpfile) as original:
+                with open(tmpfile) as original:  # should have been checked out by git
                     code = ''.join(original.readlines())  # NOTE: preserves newlines
                 lexer = pygments.lexers.guess_lexer_for_filename(f, f)
                 with open(html, 'x') as result:
