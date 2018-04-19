@@ -1,0 +1,137 @@
+{% extends "base.html" %} {% block content %}
+<div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
+  <a href="/"><h1>Snapper</h1></a>
+
+  <!-- OPEN PROJECT SECTION -->
+  <form action="index.php" method="post">
+    <table>
+      <tr>
+        <td><textarea name="project" required>{{ project }}</textarea></td>
+        <td><input value="open" type='submit'></td>
+      </tr>
+    </table>
+  </form>
+  <!-- <?php
+  $dir = "snaps/";
+  if (is_dir($dir)){
+    if ($dh = opendir($dir)){
+      echo("<ul>");
+      while (($project = readdir($dh)) !== false){
+        if($project[0]!==".")
+        {
+          echo("<li><a href='index.php?project=$project'>$project</a></li>");
+        }
+      }
+      echo("</ul>");
+    }
+  }
+  ?> -->
+  <hr>
+
+  <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
+  <!-- <?php
+  if(isset($_SESSION["project"])) {
+    $dir = "snaps/" . $_SESSION["project"];
+    if (is_dir($dir)){
+      if ($dh = opendir($dir)){
+        $files = array();
+        while (($file = readdir($dh)) !== false){
+          if($file[0]!==".")
+          {
+            array_push($files,$file);
+          }
+        }
+        sort($files);
+        closedir($dh);
+        $currentIndex=0;
+        if(isset($_SESSION["slide"])) {
+          if($_SESSION["slide"]===0)
+          {
+            $currentIndex=$files[0];
+          }
+          else
+          {
+            $currentIndex=array_search($_SESSION["slide"],$files);//gets index of slide
+          }
+        }
+        echo("<div class='col-md-6'>");
+        if($currentIndex>0){
+          $prev = $files[$currentIndex-1];
+          echo("<a href='index.php?slide=$prev'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span>");
+        }
+        echo("</div>");
+        echo("<div class='col-md-6'>");
+        if($currentIndex<count($files)-1)
+        {
+          $next = $files[$currentIndex+1];
+          echo("<a href='index.php?slide=$next'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>");
+        }
+        echo("</div><br>");
+
+        echo("<ul>\n");
+        for($i=0; $i<count($files);$i++) {// CREATE LIST OF SLIDES HERE
+          $file=$files[$i];
+          if($file==$_SESSION["slide"]) {
+            echo("<li><a href='index.php?slide=$file'><strong>$file</strong></a></li>\n");
+          }
+          else {
+            echo("<li><a href='index.php?slide=$file'>$file</a></li>\n");
+          }
+        }
+        echo("</ul><br>");
+      }
+      else("Could not open directory");
+    }
+    else {
+      echo("Directory not found<br>");
+    }
+  }
+  ?> -->
+  <hr>
+  <br>
+  <!-- ZIP UPLOAD SECTION -->
+  <form action="upload.php" method="post" enctype="multipart/form-data">
+    <table>
+      <tr>
+        <td>Zip file:</td>
+        <td><input type="file" name="zip" /></td>
+      </tr>
+      <tr>
+        <td>Trackable file:</td>
+        <td><input type="text" name="filename" /></td>
+      </tr>
+      <tr>
+        <td>&nbsp;</td>
+        <td><input value="open" type='submit'></td>
+      </tr>
+    </table>
+  </form>
+  <br>
+  <form action="index.php" method="get">
+    <input type="text" name="clear" value="kill" hidden/></td>
+    <td><input value="Exit" type='submit'></td>
+  </form>
+</div>
+<div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
+  <h2>Code</h2>
+  <hr>
+  <div id="codepanel">
+    <ol>
+      <!-- <?php
+  if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
+    include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/code.html");
+  }
+  ?> -->
+    </ol>
+  </div>
+</div>
+<div class="col-md-5 outputpanel" style="top: 0; bottom:0; overflow-y: scroll;">
+  <h2>Output</h2>
+  <hr>
+  <!-- <?php
+  if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
+    include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/output.html");
+  }
+  ?> -->
+</div>
+{% endblock %}

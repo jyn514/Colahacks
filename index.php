@@ -74,7 +74,7 @@ Email:     brennan@brennancain.com
           echo("</ul>");
         }
       }
-          ?>
+      ?>
       <hr>
 
       <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
