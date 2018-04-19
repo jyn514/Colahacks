@@ -201,9 +201,10 @@ def main(directory, commit="HEAD", previous=None, files=None):
         previous = commit + '~1'  # most recent parent of <commit>
     if files is None:
         files = directory
-    
-    if not os.path.isdir(directory):
-        raise ValueError("first argument must be a directory (was passed %s)" % directory)
+
+    if not os.path.isdir(directory + '/.git'):
+        raise ValueError("first argument must be a directory with git history "
+                         + "(was '%s')" % directory)
 
     try:
         files = shlex.split(files)
