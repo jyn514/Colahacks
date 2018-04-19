@@ -1,3 +1,8 @@
+<?php
+if (session_status() == PHP_SESSION_NONE) {
+  session_start();
+}
+?>
 <!DOCTYPE html>
 <!--
 Author:    Brennan Cain
@@ -6,9 +11,6 @@ Email:     brennan@brennancain.com
 <html>
 <head>
   <?php
-  if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-  }
   if(isset($_GET["clear"]))
   {
     session_unset();
@@ -74,7 +76,7 @@ Email:     brennan@brennancain.com
           echo("</ul>");
         }
       }
-          ?>
+      ?>
       <hr>
 
       <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->

@@ -1,8 +1,12 @@
-import os.path
+#! /usr/bin/env python3
+
 import os
+from os import makedirs, listdir
+import os.path
+from os.path import join as pathjoin, basename, isdir, exists as pathexists
 import fileinput
 from subprocess import PIPE, Popen, run
-from shutil import rmtree
+from shutil import rmtree, which
 import sys
 
 import pygments
@@ -15,15 +19,19 @@ saveroot = 'snaps'
 compile_snap = 'makesnap.sh'
 run_snap = 'runsnap.sh'
 
+sh_cmd = which('sh')
+diff_cmd = which('diff')
+unzip_cmd = which('unzip')
+
 def file_diff(codefile, prevcodefile):
     '''
     Diffs the code file to previous code file then returns list of tuples with
         lines which are changes
     Parameters are both strings containing valid paths to code source
     '''
-    output = run(['diff', codefile, prevcodefile], stdout=PIPE).stdout.decode()
+    output = run([diff_cmd, codefile, prevcodefile], stdout=PIPE).stdout.decode()
     changes = []
-    for line in output.split():
+    for line in output.splitlines():
         if len(line) <= 0 or line[0] in "<>- ":
             continue  # we only want the numbers of where diffs are
         for i, char in enumerate(line):
@@ -79,50 +87,59 @@ def main(zipfile, source):
     For each version of source, store code and output on disk in HTML format
     '''
     zipfile = zipfile.replace('.zip', '')
-    zipdir = ziproot + '/' + os.path.basename(zipfile)
-    savedir = saveroot + '/' + os.path.basename(zipfile)
+    zipdir = pathjoin(ziproot, basename(zipfile))
+    savedir = pathjoin(saveroot, basename(zipfile))
 
-    if not os.path.isdir(zipdir):
-        os.makedirs(zipdir)
-    if not os.path.isdir(savedir):
-        os.makedirs(savedir)
+    if not isdir(zipdir):
+        makedirs(zipdir)
+    if not isdir(savedir):
+        makedirs(savedir)
 
-    run(['unzip', '-u', '-o', '-q', '-d', zipdir, zipfile])  # unzip automatically adds extension
-    run(['chmod', '-R', '777', zipdir])
+    run([unzip_cmd, '-u', '-o', '-q', '-d', zipdir, zipfile])  # unzip automatically adds extension
+#    run(['chmod', '-R', '777', zipdir])
 
     previous = None
-    for version in sorted(os.listdir(zipdir)):
-        original = zipdir + '/' + version
-        saves = savedir + '/' + version
+    for version in sorted(listdir(zipdir)):
+        original = pathjoin(zipdir, version)
+        saves = pathjoin(savedir, version)
 
         # overwrite existing
-        if os.path.isdir(saves):
+        if isdir(saves):
             rmtree(saves)
-        os.makedirs(saves)
+        makedirs(saves)
 
         # not required
-        try:
-            Popen(['./' + compile_snap], cwd=original)
-        except FileNotFoundError:
-            pass
-        try:
-            output = Popen(['./' + run_snap], stdout=PIPE,
-                           cwd=original).stdout
-            output = '\n'.join(i.decode() for i in output)
-        except FileNotFoundError:
-            output = ''
+        compile_output = ''
+        if pathexists(pathjoin(original, compile_snap)):
+            try:
+                compile_output = run([sh_cmd, compile_snap],
+                        stdout=PIPE, cwd=original).stdout.decode()
+            except FileNotFoundError:
+                pass  # Shouldn't happen but just in case
 
-        pygments.highlight(output, BashLexer(), HtmlFormatter(), open(saves + '/output.html', 'x'))
-        code = ''.join(open(original + '/' + source).readlines())
-        code = pygments.highlight(code, get_lexer_for_filename(source), HtmlFormatter(), open(saves + '/code.html', 'x'))
+        output = ''
+        if pathexists(pathjoin(original, run_snap)):
+            try:
+                output = run([sh_cmd, run_snap],
+                        stdout=PIPE, cwd=original).stdout.decode()
+                # output = '\n'.join(i.decode() for i in output)
+            except FileNotFoundError:
+                pass  # Shouldn't happen but just in case
+            except OSError as e:
+                output = 'OSError in snap %s\n%s' % (version, e)
+
+        pygments.highlight(output, BashLexer(), HtmlFormatter(),
+                open(pathjoin(saves, 'output.html'), 'x'))
+        code = ''.join(open(pathjoin(original, source)).readlines())
+        code = pygments.highlight(code, get_lexer_for_filename(source),
+                HtmlFormatter(), open(pathjoin(saves, 'code.html'), 'x'))
 
         # add bolding
         if previous is not None:
-            diff_result = file_diff(previous + '/' + source, original + '/' + source)
-            add_strongs(diff_result, saves + '/code.html')
+            diff_result = file_diff(pathjoin(previous, source), pathjoin(original, source))
+            add_strongs(diff_result, pathjoin(saves, 'code.html'))
 
         previous = original
-    return "complete"
 
 
 if __name__ == '__main__':
@@ -130,4 +147,4 @@ if __name__ == '__main__':
     parser = ArgumentParser(__doc__)
     parser.add_argument("zipfile")
     parser.add_argument("source")
-    print(main(**parser.parse_args().__dict__))
+    main(**parser.parse_args().__dict__)
