@@ -202,6 +202,9 @@ def main(directory, commit="HEAD", previous=None, files=None):
     if files is None:
         files = directory
     
+    if not os.path.isdir(directory):
+        raise ValueError("first argument must be a directory (was passed %s)" % directory)
+
     try:
         files = shlex.split(files)
     except AttributeError:
