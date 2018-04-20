@@ -64,6 +64,7 @@
     <input value="Reset" type='submit'>
   </form>
 </div>
+{% if project %}
 <div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
   <h2>Code</h2>
   <hr>
@@ -86,4 +87,5 @@
   }
   ?> -->
 </div>
+{% endif %}
 {% endblock %}
