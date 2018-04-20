@@ -3,33 +3,39 @@ import os
 
 from flask import Flask, render_template, app, request, session
 
+from snapper import SAVE_ROOT
+
 app = Flask(__name__)
-SNAP_DIR = 'snaps'
+
 
 @app.route("/", methods = ['GET', 'POST'])
 def main():
     if "clear" in request.args:
         session.clear()
 
-    project = request.values.get("project")
+    session['dirs'] = os.listdir(SAVE_ROOT)
+    session['SAVE_ROOT'] = SAVE_ROOT
+
+    project = request.values.get("project") or session.get('project', None)
+
     if project is not None:
         session['project'] = project
-        project = os.path.join(SNAP_DIR, project)
+        project = os.path.join(SAVE_ROOT, project)
         if os.path.isdir(project):
-            files = sorted(os.listdir(project))
-            session['files'] = files
-            slide = request.values.get("slide")
+            versions = sorted(os.listdir(project))
+            session['versions'] = versions
+            version = request.values.get("version") or session.get('current', None)
 
-            if slide is not None:
-                session['slide'] = slide
-                index = files.index(slide)
+            if version is not None:
+                session['current'] = version
+                index = versions.index(version)
             else:
-                session['slide'], index = files[0], 0
+                session['current'], index = versions[0], 0
 
             if index > 0:
-                session['prev_slide'] = files[index - 1]
-            if index + 1 < len(files):
-                session['next_slide'] = files[index + 1]
+                session['prev_version'] = versions[index - 1]
+            if index + 1 < len(versions):
+                session['next_version'] = versions[index + 1]
     return render_template("index.html", **session)
 
 if __name__ == "__main__":

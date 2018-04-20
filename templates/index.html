@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block morehead %}
 <meta name="description" content="Main page for the Snapper project">
 {% endblock %}
@@ -30,21 +31,21 @@
   {% if project %}
 
     <div class='col-md-6'><!-- back button -->
-    {% if prev_slide %}
-      <a href='/?slide={{ prev_slide }}'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
+    {% if prev_version %}
+      <a href='/?version={{ prev_version }}'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
     {% endif %}
     </div>
 
     <div class='col-md-6'><!-- forward button -->
-    {% if next_slide %}
-      <a href='/?slide={{ next_slide }}'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
+    {% if next_version %}
+      <a href='/?version={{ next_version }}'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
     {% endif %}
     </div><br />
 
-    <ul>{% for file in files %}
-      <li><a href='/?slide={{ file }}'>
-      {% if file == slide %}<strong>{{ file }}</strong>
-      {% else %}{{ file }}{% endif %}
+    <ul>{% for version in versions %}
+      <li><a href='/?version={{ version }}'>
+      {% if version == current %}<strong>{{ version }}</strong>
+      {% else %}{{ version }}{% endif %}
       </a></li>
     {% endfor %}</ul><br />
   {% else %}<p>Directory not found</p>
