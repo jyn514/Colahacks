@@ -11,7 +11,7 @@ from pygments.lexers.shell import BashLexer
 from pygments.formatters import HtmlFormatter
 
 CACHE_ROOT = '/tmp/snap'
-SAVE_ROOT = '~/.cache/snap'
+SAVE_ROOT = os.path.expanduser('~/.cache/snap')
 COMPILE = 'makesnap.sh'
 RUN = 'runsnap.sh'
 
