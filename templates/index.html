@@ -8,7 +8,7 @@
   <a href="/"><h1>Snapper</h1></a>
 
   <!-- OPEN PROJECT SECTION -->
-  <form action="index.php" method="post">
+  <form action="/" method="post">
     <table>
       <tr>
         <td><textarea name="project" required>{{ project }}</textarea></td>
@@ -16,82 +16,40 @@
       </tr>
     </table>
   </form>
-  <!-- <?php
-  $dir = "snaps/";
-  if (is_dir($dir)){
-    if ($dh = opendir($dir)){
-      echo("<ul>");
-      while (($project = readdir($dh)) !== false){
-        if($project[0]!==".")
-        {
-          echo("<li><a href='index.php?project=$project'>$project</a></li>");
-        }
-      }
-      echo("</ul>");
-    }
-  }
-  ?> -->
+  {% if dir %}
+  <ul>
+    {% for d in files %}
+    <li><a href="/?project={{ d }}">{{ d }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   <hr>
 
   <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
-  <!-- <?php
-  if(isset($_SESSION["project"])) {
-    $dir = "snaps/" . $_SESSION["project"];
-    if (is_dir($dir)){
-      if ($dh = opendir($dir)){
-        $files = array();
-        while (($file = readdir($dh)) !== false){
-          if($file[0]!==".")
-          {
-            array_push($files,$file);
-          }
-        }
-        sort($files);
-        closedir($dh);
-        $currentIndex=0;
-        if(isset($_SESSION["slide"])) {
-          if($_SESSION["slide"]===0)
-          {
-            $currentIndex=$files[0];
-          }
-          else
-          {
-            $currentIndex=array_search($_SESSION["slide"],$files);//gets index of slide
-          }
-        }
-        echo("<div class='col-md-6'>");
-        if($currentIndex>0){
-          $prev = $files[$currentIndex-1];
-          echo("<a href='index.php?slide=$prev'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span>");
-        }
-        echo("</div>");
-        echo("<div class='col-md-6'>");
-        if($currentIndex<count($files)-1)
-        {
-          $next = $files[$currentIndex+1];
-          echo("<a href='index.php?slide=$next'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>");
-        }
-        echo("</div><br>");
+  {% if project %}
 
-        echo("<ul>\n");
-        for($i=0; $i<count($files);$i++) {// CREATE LIST OF SLIDES HERE
-          $file=$files[$i];
-          if($file==$_SESSION["slide"]) {
-            echo("<li><a href='index.php?slide=$file'><strong>$file</strong></a></li>\n");
-          }
-          else {
-            echo("<li><a href='index.php?slide=$file'>$file</a></li>\n");
-          }
-        }
-        echo("</ul><br>");
-      }
-      else("Could not open directory");
-    }
-    else {
-      echo("Directory not found<br>");
-    }
-  }
-  ?> -->
+    <div class='col-md-6'><!-- back button -->
+    {% if prev_slide %}
+      <a href='/?slide={{ prev_slide }}'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
+    {% endif %}
+    </div>
+
+    <div class='col-md-6'><!-- forward button -->
+    {% if next_slide %}
+      <a href='/?slide={{ next_slide }}'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
+    {% endif %}
+    </div><br />
+
+    <ul>{% for file in files %}
+      <li><a href='/?slide={{ file }}'>
+      {% if file == slide %}<strong>{{ file }}</strong>
+      {% else %}{{ file }}{% endif %}
+      </a></li>
+    {% endfor %}</ul><br />
+  {% else %}<p>Directory not found</p>
+  {% endif %}
+
   <hr>
   <br>
   <!-- ZIP UPLOAD SECTION -->
@@ -112,7 +70,7 @@
     </table>
   </form>
   <br>
-  <form action="index.php" method="get">
+  <form action="/" method="get">
     <input type="text" name="clear" value="kill" hidden/></td>
     <td><input value="Exit" type='submit'></td>
   </form>
