@@ -54,26 +54,14 @@
   <hr>
   <br>
   <!-- ZIP UPLOAD SECTION -->
-  <form action="upload.php" method="post" enctype="multipart/form-data">
-    <table>
-      <tr>
-        <td>Zip file:</td>
-        <td><input type="file" name="zip" /></td>
-      </tr>
-      <tr>
-        <td>Trackable file:</td>
-        <td><input type="text" name="filename" /></td>
-      </tr>
-      <tr>
-        <td>&nbsp;</td>
-        <td><input value="open" type='submit'></td>
-      </tr>
-    </table>
+  <form action="upload.html" method="post" enctype="multipart/form-data">
+    <input type="file" id="FileUpload" value="directory" onchange="selectFolder(event)" webkitdirectory mozdirectory msdirectory odirectory directory multiple />
+    <input value="open" type='submit'>
   </form>
   <br>
   <form action="/" method="get">
-    <input type="text" name="clear" value="kill" hidden/></td>
-    <td><input value="Exit" type='submit'></td>
+    <input type="text" name="clear" value="kill" hidden/>
+    <input value="Reset" type='submit'>
   </form>
 </div>
 <div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
