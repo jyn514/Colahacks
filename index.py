@@ -2,7 +2,7 @@
 import os
 
 from flask import Flask, render_template, app, request, session
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from werkzeug import secure_filename
 
@@ -11,27 +11,33 @@ from snapper import SAVE_ROOT
 app = Flask(__name__)
 
 
-class FileUploadForm(Form):
+class FileUploadForm(FlaskForm):
     file = FileField()
 
 @app.route("/", methods = ['GET', 'POST'])
 def main():
+    other_vars = dict()
     if "clear" in request.args:
         session.clear()
 
     if not os.path.isdir(SAVE_ROOT):
         os.makedirs(SAVE_ROOT, exist_ok=True)
-    session['dirs'] = os.listdir(SAVE_ROOT)
-    session['SAVE_ROOT'] = SAVE_ROOT
+    other_vars['dirs'] = os.listdir(SAVE_ROOT)
+    app.config['SAVE_ROOT'] = SAVE_ROOT
 
     project = request.values.get("project") or session.get('project', None)
 
-    if request.method == 'POST':
-        form = FileUploadForm(request.form)
+    upload_dir = os.path.join(SAVE_ROOT, 'uploads')
+    if not os.path.isdir(upload_dir):
+        os.makedirs(upload_dir, exist_ok=True)
+
+    form = FileUploadForm(request.form)
+    if request.method == 'POST' and form.validate():
         if form.validate_on_submit():
             filename = secure_filename(form.file.data.filename)
-            form.file.data.save('uploads/' + filename)
+            form.file.data.save(os.path.join(upload_dir, 'uploads', filename))
             #TODO do more stuff with the file
+    other_vars["form"] = form
 
     if project is not None:
         session['project'] = project
@@ -48,10 +54,10 @@ def main():
                 session['current'], index = versions[0], 0
 
             if index > 0:
-                session['prev_version'] = versions[index - 1]
+                other_vars['prev_version'] = versions[index - 1]
             if index + 1 < len(versions):
-                session['next_version'] = versions[index + 1]
-    return render_template("index.html", **session)
+                other_vars['next_version'] = versions[index + 1]
+    return render_template("index.html", **dict(session, **other_vars))
 
 if __name__ == "__main__":
     app.secret_key = 'TODO: A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'  #TODO don't use this

@@ -8,7 +8,7 @@
 <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
   <a href="/"><h1>Snapper</h1></a>
 
-  <!-- OPEN PROJECT SECTION -->
+<!--
   <form action="/" method="post">
     <table>
       <tr>
@@ -17,6 +17,8 @@
       </tr>
     </table>
   </form>
+-->
+
   {% if dir %}
   <ul>
     {% for d in files %}
@@ -54,7 +56,7 @@
   <hr>
   <br>
   <!-- ZIP UPLOAD SECTION -->
-  <form action="upload.html" method="post" enctype="multipart/form-data">
+  <!-- <form action="upload.html" method="post" enctype="multipart/form-data">
     <input type="file" id="FileUpload" value="directory" onchange="selectFolder(event)" webkitdirectory mozdirectory msdirectory odirectory directory multiple />
     <input value="open" type='submit'>
   </form>
@@ -62,6 +64,26 @@
   <form action="/" method="get">
     <input type="text" name="clear" value="kill" hidden/>
     <input value="Reset" type='submit'>
+  </form> -->
+
+  {% macro render_field(field) %}
+    <dt>{{ field.label }}
+    <dd>{{ field(**kwargs)|safe }}
+    {% if field.errors %}
+      <ul class=errors>
+      {% for error in field.errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+    </dd>
+  {% endmacro %}
+
+  <form method=post>
+    <dl>
+      {{ render_field(form.file) }}
+    </dl>
+    <p><input type=submit value=Register>
   </form>
 </div>
 {% if project %}
