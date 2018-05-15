@@ -22,7 +22,7 @@
   {% if dir %}
   <ul>
     {% for d in files %}
-    <li><a href="/?project={{ d }}">{{ d }}</a></li>
+    <li><a href="url_for('.main', messages=messages)">{{ d }}</a></li>
     {% endfor %}
   </ul>
   {% endif %}
@@ -50,7 +50,7 @@
       {% else %}{{ version }}{% endif %}
       </a></li>
     {% endfor %}</ul><br />
-  {% else %}<p>Directory not found</p>
+  {% else %}<p>No project selected</p>
   {% endif %}
 
   <hr>
@@ -79,7 +79,8 @@
     </dd>
   {% endmacro %}
 
-  <form method=post>
+  <form action="" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
     <dl>
       {{ render_field(form.file) }}
     </dl>
