@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
-from zipfile import ZipFile
+import shutil
+from zipfile import ZipFile, ZipInfo
 
 from flask import Flask, render_template, app, request, session, redirect, url_for
 from flask_wtf import FlaskForm, CSRFProtect
@@ -15,6 +16,30 @@ PROJECTS_DIR = SAVE_ROOT  # os.path.join(SAVE_ROOT, 'projects')  # TODO(HD) proj
 
 app = Flask(__name__)
 
+
+# Patch for lost file permissions provided on StackOverflow by Anthon
+# https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries/39296577#39296577
+class PatchedZipFile(ZipFile):
+    def extract(self, member, path=None, pwd=None):
+        if not isinstance(member, ZipInfo):
+            member = self.getinfo(member)
+
+        if path is None:
+            path = os.getcwd()
+        else:
+            path = os.fspath(path)
+
+        ret_val = self._extract_member(member, path, pwd)
+        attr = member.external_attr >> 16
+        os.chmod(ret_val, attr)
+        return ret_val
+
+    def extractall(self, path=None, members=None, pwd=None):
+        if members is None:
+            members = self.namelist()
+
+        for zipinfo in members:
+            self.extract(zipinfo, path, pwd)
 
 class FileUploadForm(FlaskForm):
     file = FileField(validators=[
@@ -46,9 +71,12 @@ def main():
             saved_zip = os.path.join(UPLOADS_DIR, filename)
             form.file.data.save(saved_zip)
             project_save_dir = os.path.join(UPLOADS_DIR, project_name)
-            os.makedirs(project_save_dir, exist_ok=True)
 
-            with ZipFile(saved_zip, 'r') as project_zip:
+            if os.path.exists(project_save_dir):
+                shutil.rmtree(project_save_dir)
+            os.makedirs(project_save_dir)
+
+            with PatchedZipFile(saved_zip, 'r') as project_zip:
                 project_zip.extractall(project_save_dir)
 
             if os.path.exists(saved_zip):
@@ -71,11 +99,15 @@ def main():
             session['versions'] = versions
             version = request.values.get("version") or session.get('current', None)
 
-            if version is not None:
+            if version in versions:
                 session['current'] = version
                 index = versions.index(version)
+
+                with open(os.path.join(PROJECTS_DIR, project, version, 'output.html'), 'r') as ofile:
+                    other_vars['output_file'] = ofile.read()
             else:
-                session['current'], index = versions[0], 0
+                index = 0
+                session['current'] = versions[0]
 
             if index > 0:
                 other_vars['prev_version'] = versions[index - 1]

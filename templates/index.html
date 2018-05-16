@@ -19,10 +19,11 @@
   </form>
 -->
 
+  <!-- TODO this part has not been tested at all yet -->
   {% if dir %}
   <ul>
     {% for d in files %}
-    <li><a href="url_for('.main', messages=messages)">{{ d }}</a></li>
+    <li><a href="{{ url_for('.main', project=d) }}">{{ d }}</a></li>
     {% endfor %}
   </ul>
   {% endif %}
@@ -31,41 +32,31 @@
 
   <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
   {% if project %}
-
     <div class='col-md-6'><!-- back button -->
     {% if prev_version %}
-      <a href='/?version={{ prev_version }}'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
+      <a href='{{ url_for('.main', version=prev_version) }}'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
     {% endif %}
     </div>
 
     <div class='col-md-6'><!-- forward button -->
     {% if next_version %}
-      <a href='/?version={{ next_version }}'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
+      <a href='{{ url_for('.main', version=next_version) }}'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
     {% endif %}
     </div><br />
 
     <ul>{% for version in versions %}
-      <li><a href='/?version={{ version }}'>
+      <li><a href='{{ url_for('.main', version=version) }}'>
       {% if version == current %}<strong>{{ version }}</strong>
       {% else %}{{ version }}{% endif %}
       </a></li>
     {% endfor %}</ul><br />
-  {% else %}<p>No project selected</p>
+  {% else %}
+    <p>No project selected</p>
   {% endif %}
 
   <hr>
   <br>
   <!-- ZIP UPLOAD SECTION -->
-  <!-- <form action="upload.html" method="post" enctype="multipart/form-data">
-    <input type="file" id="FileUpload" value="directory" onchange="selectFolder(event)" webkitdirectory mozdirectory msdirectory odirectory directory multiple />
-    <input value="open" type='submit'>
-  </form>
-  <br>
-  <form action="/" method="get">
-    <input type="text" name="clear" value="kill" hidden/>
-    <input value="Reset" type='submit'>
-  </form> -->
-
   {% macro render_field(field) %}
     <dt>{{ field.label }}
     <dd>{{ field(**kwargs)|safe }}
@@ -87,28 +78,33 @@
     <p><input type=submit value=Register>
   </form>
 </div>
+
 {% if project %}
-<div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
-  <h2>Code</h2>
-  <hr>
-  <div id="codepanel">
-    <ol>
-      <!-- <?php
-  if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
-    include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/code.html");
-  }
-  ?> -->
-    </ol>
+  <!-- CODE DISPLAY SECTION -->
+  <div class="col-md-5 codepanel" style="top: 0; bottom:0; overflow-y: scroll;">
+    <h2>Code</h2>
+    <hr>
+    <div id="codepanel">
+      <ol>
+        <!-- <?php
+    if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
+      include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/code.html");
+    }
+    ?> -->
+      </ol>
+    </div>
   </div>
-</div>
-<div class="col-md-5 outputpanel" style="top: 0; bottom:0; overflow-y: scroll;">
-  <h2>Output</h2>
-  <hr>
-  <!-- <?php
-  if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
-    include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/output.html");
-  }
-  ?> -->
-</div>
+
+  <!-- OUTPUT DISPLAY SECTION -->
+  <div class="col-md-5 outputpanel" style="top: 0; bottom:0; overflow-y: scroll;">
+    <h2>Output</h2>
+    <hr>
+    <!-- <?php
+    if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
+      include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/output.html");
+    }
+    ?> -->
+      {{ output_file|safe }}
+  </div>
 {% endif %}
 {% endblock %}
