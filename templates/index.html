@@ -4,48 +4,51 @@
 <meta name="description" content="Main page for the Snapper project">
 {% endblock %}
 
+{% macro render_field(field) %}
+  <dt>{{ field.label }}
+  <dd>{{ field(**kwargs)|safe }}
+  {% if field.errors %}
+    <ul class=errors>
+    {% for error in field.errors %}
+      <li>{{ error }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  </dd>
+{% endmacro %}
+
 {% block content %}
 <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
-  <a href="/"><h1>Snapper</h1></a>
+  <a href="{{ url_for('.main', clear=True)}}"><h1>Snapper</h1></a>
 
-<!--
-  <form action="/" method="post">
-    <table>
-      <tr>
-        <td><textarea name="project" required>{{ project }}</textarea></td>
-        <td><input value="open" type='submit'></td>
-      </tr>
-    </table>
-  </form>
--->
-
-  <!-- TODO this part has not been tested at all yet -->
-  {% if dir %}
+  {% if dirs %}
   <ul>
-    {% for d in files %}
+    {% for d in dirs %}
     <li><a href="{{ url_for('.main', project=d) }}">{{ d }}</a></li>
     {% endfor %}
   </ul>
+  {% else %}
+    <p>No projects available</p>
   {% endif %}
 
-  <hr>
+  <hr/>
 
   <!-- LIST SLIDES AND CREATE FORWARD/BACKWARD Buttons-->
   {% if project %}
     <div class='col-md-6'><!-- back button -->
     {% if prev_version %}
-      <a href='{{ url_for('.main', version=prev_version) }}'><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
+      <a href="{{ url_for('.main', version=prev_version) }}"><span class='glyphicon glyphicon-chevron-left' aria-hidden='true'></span></a>
     {% endif %}
     </div>
 
     <div class='col-md-6'><!-- forward button -->
     {% if next_version %}
-      <a href='{{ url_for('.main', version=next_version) }}'><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
+      <a href="{{ url_for('.main', version=next_version) }}"><span class='glyphicon glyphicon-chevron-right' aria-hidden='true'></span></a>
     {% endif %}
-    </div><br />
+    </div><br/>
 
     <ul>{% for version in versions %}
-      <li><a href='{{ url_for('.main', version=version) }}'>
+      <li><a href="{{ url_for('.main', version=version) }}">
       {% if version == current %}<strong>{{ version }}</strong>
       {% else %}{{ version }}{% endif %}
       </a></li>
@@ -54,23 +57,34 @@
     <p>No project selected</p>
   {% endif %}
 
-  <hr>
-  <br>
-  <!-- ZIP UPLOAD SECTION -->
-  {% macro render_field(field) %}
-    <dt>{{ field.label }}
-    <dd>{{ field(**kwargs)|safe }}
-    {% if field.errors %}
-      <ul class=errors>
-      {% for error in field.errors %}
-        <li>{{ error }}</li>
-      {% endfor %}
-      </ul>
-    {% endif %}
-    </dd>
-  {% endmacro %}
+  <hr/>
 
-  <form action="" method="post" enctype="multipart/form-data">
+  <!-- FILE SELECTION SECTION -->
+  {% if project_tree %}
+    <!-- TODO(HD) fill in directory tree and link -->
+    {% for file in project_tree %}
+      {% for i in range(file[1]) %} &emsp; {% endfor %}
+      {% if file[2] %}
+        <a href="{{ url_for('.main', codefile=file[3])}}">
+          {% if file[0] == codefile %}
+            <strong>{{ file[0] }}</strong>
+          {% else %}
+            {{ file[0] }}
+          {% endif %}
+        </a>
+      {% else %}
+        {{ file[0] }}
+      {% endif %}
+      <br/>
+    {% endfor %}
+  {% else %}
+    <p>No project directory tree</p>
+  {% endif %}
+
+  <hr/>
+
+  <!-- ZIP UPLOAD SECTION -->
+  <form action="url_for('.main')" method="post" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     <dl>
       {{ render_field(form.file) }}
@@ -85,13 +99,7 @@
     <h2>Code</h2>
     <hr>
     <div id="codepanel">
-      <ol>
-        <!-- <?php
-    if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
-      include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/code.html");
-    }
-    ?> -->
-      </ol>
+      {{ code_file|safe }}
     </div>
   </div>
 
@@ -99,12 +107,8 @@
   <div class="col-md-5 outputpanel" style="top: 0; bottom:0; overflow-y: scroll;">
     <h2>Output</h2>
     <hr>
-    <!-- <?php
-    if(isset($_SESSION["project"]) and isset($_SESSION["slide"])) {
-      include("snaps/" . $_SESSION["project"] . "/" . $_SESSION["slide"]."/output.html");
-    }
-    ?> -->
-      {{ output_file|safe }}
+    {{ output_file|safe }}
   </div>
 {% endif %}
+
 {% endblock %}

@@ -140,7 +140,7 @@ def checkout(files, previous, current, directory):
 
 def tracked(f, commit, cwd):
     '''Tell if an object is tracked in commit'''
-    output = output_to_string(run(['git', '--git-dir', cwd + '/.git', 'ls-tree', commit,
+    output = output_to_string(Popen(['git', '--git-dir', cwd + '/.git', 'ls-tree', commit,
                                    f], stdout=PIPE).stdout)
     return not (output is None or output == '')
 
