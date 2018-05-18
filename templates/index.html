@@ -2,6 +2,9 @@
 
 {% block morehead %}
 <meta name="description" content="Main page for the Snapper project">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gitgraph.js/1.11.4/gitgraph.min.js" integrity="sha256-GnT/NwDbq88UaORqlptuj0SeLmNOODb3dGDR7TDNXeM=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitgraph.js/1.11.4/gitgraph.min.css" integrity="sha256-NMEjcOKIgq9M/7nn2CN6xNwRXbgpYFOIBCdivsdNDTA=" crossorigin="anonymous" />
 {% endblock %}
 
 {% macro render_field(field) %}
@@ -17,9 +20,47 @@
   </dd>
 {% endmacro %}
 
+<!-- To be used within the gitGraph javascript -->
+{% macro git_commit(branch, current_sha1, parent_sha1, msg) %}
+  {% set type = "current" if current_sha1 == current else "none" %}
+  <script> git_commit("{{ branch }}", "{{ current_sha1 }}", "{{ parent_sha1 }}", "{{ msg }}", "{{ link }}", "{{ type }}"); </script>
+{% endmacro %}
+
+
+
+{% set commit_history = [
+    ("master", "7c1143ced2774fba230e0107b7033f64d79d1009", "", "Fourth commit"),
+    ("master", "95c70baaddf1c2438714be6a4cb5fd1f392030c7", "", "Added some mathstuffs"),
+    ("master", "ad9484c90841843fa75173274a1d7fed3e2687fd", "", "Made mathstuffs even realer"),
+    ("master", "bdc0feddd122658fffbbd7f0d15493b9ac417bc7", "", "Added debugging directory stuff")
+  ]
+%}
+
 {% block content %}
 <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
-  <a href="{{ url_for('.main', clear=True)}}"><h1>Snapper</h1></a>
+  <a href="{{ url_for('.main', clear=True) }}"><h1>Snapper</h1></a>
+
+  <div id="gitGraph_scrollbar" style="overflow-x: scroll">
+    <canvas id="gitGraph"></canvas>
+    <script src="{{ url_for('static', filename='setup_gitgraph.js') }}"></script>
+
+    <!-- TODO(HD) this is manually parsed from pydemo3, but should be parsed within snapper.py using rev-list -->
+    {% for i in range(60) %}
+      {{ git_commit("master", i, "", "Extra commit %d" % i) }}
+    {% endfor %}
+    {{ git_commit("master", "7c1143ced2774fba230e0107b7033f64d79d1009", "", "Fourth commit") }}
+    {{ git_commit("master", "95c70baaddf1c2438714be6a4cb5fd1f392030c7", "", "Added some mathstuffs") }}
+    {{ git_commit("master", "ad9484c90841843fa75173274a1d7fed3e2687fd", "", "Made mathstuffs even realer") }}
+    {{ git_commit("master", "bdc0feddd122658fffbbd7f0d15493b9ac417bc7", "", "Added debugging directory stuff") }}
+    <!-- To test the scrollbar -->
+    {% for i in range(20) %}
+      {{ git_commit("development", i, "", "Extra commit %d" % i) }}
+    {% endfor %}
+    <script> scroll_to("bdc0feddd122658fffbbd7f0d15493b9ac417bc7"); </script>
+    <!-- END TODO -->
+  </div>
+
+  <hr/>
 
   {% if dirs %}
   <ul>
@@ -49,7 +90,7 @@
 
     <ul>{% for version in versions %}
       <li><a href="{{ url_for('.main', version=version) }}">
-      {% if version == current %}<strong>{{ version }}</strong>
+      {% if version == current %}<strong>{{ version[:6] }}</strong>
       {% else %}{{ version }}{% endif %}
       </a></li>
     {% endfor %}</ul><br />
@@ -84,7 +125,7 @@
   <hr/>
 
   <!-- ZIP UPLOAD SECTION -->
-  <form action="url_for('.main')" method="post" enctype="multipart/form-data">
+  <form action="{{ url_for('.main') }}" method="post" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     <dl>
       {{ render_field(form.file) }}
