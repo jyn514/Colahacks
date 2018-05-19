@@ -130,7 +130,8 @@ def checkout(files, previous, current, directory):
             # TODO: cut back on wasteful IO
             diff = html + '.diff'
             with open(diff, 'x') as diff_file:
-                Popen(['git', 'diff', previous, current, f],
+                Popen(['git', '--work-tree', tmpdir, '--git-dir',
+                       directory + '/.git', 'diff', previous, current, f],
                       cwd=tmpdir, stdout=diff_file)
             if not os.stat(diff).st_size:
                 os.remove(diff)
@@ -179,7 +180,7 @@ def compile_and_run(tmpdir):
         return ''
 
 
-def main(directory, commit="HEAD", previous="HEAD", files='.'):
+def main(directory, commit="HEAD", previous="HEAD~1", files='.'):
     '''(str, str) -> None
     files should be one of:
         - list of file names (basename only, no directory path)
