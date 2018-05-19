@@ -155,7 +155,7 @@ def flatten(files, commit, directory, gitdir=None):
         gitdir = directory + '/.git'
     result = []
     for f in files:
-        if os.path.isdir(f):
+        if os.path.isdir(directory + '/' + f):
             # TODO: python has terribly support for recursion, make this a while loop
             output = Popen(['git', '--git-dir', gitdir,
                             'ls-tree', '--name-only', commit, f + '/'],
