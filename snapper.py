@@ -79,7 +79,7 @@ def output_to_string(output):
     return '\n'.join(i.decode() for i in output)
 
 
-def get_commit(treeish='HEAD', directory='.'):
+def get_commit(directory, treeish='HEAD'):
     'str -> str'
     args = ['git', 'show-ref']
     if treeish == 'HEAD':
@@ -99,7 +99,7 @@ def mkdir_p(*directories):
 def checkout(files, previous, current, directory):
     directory = os.path.realpath(directory)
     subdir = '/' + os.path.basename(directory)
-    savedir = SAVE_ROOT + subdir + '/' + get_commit(current)
+    savedir = SAVE_ROOT + subdir + '/' + get_commit(directory, current)
     tmpdir = CACHE_ROOT + subdir
     del subdir
 
@@ -142,8 +142,8 @@ def checkout(files, previous, current, directory):
 
 def tracked(f, commit, cwd):
     '''Tell if an object is tracked in commit'''
-    output = output_to_string(Popen(['git', 'ls-tree', commit, f], cwd=cwd,
-                                    stdout=PIPE).stdout)
+    output = output_to_string(run(['git', '--git-dir', cwd + '/.git', 'ls-tree', commit,
+                                   f], stdout=PIPE).stdout)
     return not (output is None or output == '')
 
 
@@ -185,7 +185,7 @@ def compile_and_run(tmpdir):
         return ''
 
 
-def main(directory, commit="HEAD", previous="HEAD~1", files='.'):
+def main(directory, commit="HEAD", previous=None, files=None):
     '''(str, str) -> None
     files should be one of:
         - list of file names (basename only, no directory path)
@@ -203,13 +203,23 @@ def main(directory, commit="HEAD", previous="HEAD~1", files='.'):
             example: main(files='data.csv') ->
                      SAVE_ROOT/$(realpath .)/$(git rev-parse -h HEAD)/data.csv.diff
     '''
-    if not isinstance(files, list):
+    if previous is None:
+        previous = commit + '~1'  # most recent parent of <commit>
+    if files is None:
+        files = directory
+
+    if not os.path.isdir(directory + '/.git'):
+        raise ValueError("first argument must be a directory with git history "
+                         + "(was '%s')" % directory)
+
+    try:
         files = shlex.split(files)
+    except AttributeError:
+        pass
     files = flatten(files, commit, directory)
 
     savedir, tmpdir = checkout(files, previous, commit, directory)
     output = compile_and_run(tmpdir)
-
     output_path = savedir + '/output.html'
     if not os.path.exists(output_path):
         with open(output_path, 'x') as output_file:
@@ -224,6 +234,8 @@ if __name__ == '__main__':
     parser.add_argument("directory", help='must have a git repository')
     parser.add_argument("commit", default="HEAD", nargs='?',
                         help='treeish (see `man gitglossary` for help)')
+    parser.add_argument("previous", nargs="?", help="commit to be compared to")
+    parser.add_argument("files", nargs="*", help="files to checkout")
     #parser.add_argument('--reset', action='store_true')
     print(main(**{k: v for k, v in parser.parse_args().__dict__.items()
                   if v is not None}))
