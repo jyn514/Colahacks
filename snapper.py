@@ -186,6 +186,7 @@ def comment_for(commit):
 
 
 def all_parents(directory):
+    '''Returns JSON list of commits as [comment, hash, [parent hashes]]'''
     parents = output_to_string(Popen(['git', '--git-dir', directory + '/.git',
                                       'rev-list', '--all', '--parents'],
                                      stdout=PIPE).stdout)
