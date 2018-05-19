@@ -5,6 +5,7 @@ from subprocess import PIPE, Popen, run
 from shutil import copyfile
 import sys
 import shlex
+import json
 
 import pygments
 from pygments.lexers.shell import BashLexer
@@ -177,6 +178,22 @@ def compile_and_run(tmpdir):
                                       cwd=tmpdir).stdout)
     except FileNotFoundError:
         return ''
+
+
+def comment_for(commit):
+    return output_to_string(Popen(['git', 'log', '--pretty=%s', '-n', '1', commit],
+                                  stdout=PIPE).stdout).strip()
+
+
+def all_parents(directory):
+    parents = output_to_string(Popen(['git', '--git-dir', directory + '/.git',
+                                      'rev-list', '--all', '--parents'],
+                                     stdout=PIPE).stdout)
+    parents = filter(lambda s: s != '', parents.split('\n'))
+    def f(p):
+        tmp = p.strip().split(' ')
+        return comment_for(tmp[0]), tmp[0], tmp[1:]
+    return json.dumps(tuple(map(f, parents)))
 
 
 def main(directory, commit="HEAD", previous=None, files=None):
