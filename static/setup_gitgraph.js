@@ -1,6 +1,6 @@
 var branches = {};  // dictionary of string branch name to GitGraph branch
 var commits = {};   // dictionary of string commit name to {branch: name of branch, pos: integer distance from first commit}
-var latest = "";
+var latest = "";    // sha1 hash for latest commit
 var commit_spacing = 20;
 var commit_dotsize = 6;
 var commit_width = commit_spacing;  // TODO(HD) figure out why it doesn't exactly line up
@@ -25,28 +25,32 @@ var gitGraph = new GitGraph({
 
 // Calculates the position of a commit and scrolls 'gitGraph_scrollbar' to view it
 function scroll_to(commit) {
-  // TODO(HD) remove debugging print statements
-  console.log("scrolling to " + commit);
   var scrollbar = document.getElementById("gitGraph_scrollbar");
   var scroll_width = scrollbar.offsetWidth;
   var canvas_width = document.getElementById("gitGraph").offsetWidth;
   var commit_pos = commit_width * commits[commit].pos - scroll_width / 2;
-  console.log("scroll_width: " + scroll_width);
-  console.log("canvas_width: " + canvas_width);
-  console.log("commits[commit].pos: " + commits[commit].pos);
-  console.log("commit_pos: " + commit_pos);
   if (commit_pos < 0) commit_pos = 0;
   if (commit_pos >= canvas_width - scroll_width) commit_pos = canvas_width - scroll_width;
-  console.log("~commit_pos: " + commit_pos);
   scrollbar.scrollLeft = commit_pos;
 }
 
 
-// Adds a commit to the gitGraph object
-function git_commit(branch, current, parent, msg, link, type="none") {
+// Adds a commit to the gitGraph object\
+function git_commit(branch, current, parent, msg, link, type="none", merge_parent="") {
+  // TODO(HD) these autofill cases should be removed before the final product
+
   if (!parent) {
+    // Fill in parent with latest commit if not specified
     parent = latest;
   }
+
+  if (!branch) {
+    // Fill in branch with parent's if not specified
+    branch = commits[parent].branch
+  }
+
+  // If parent and branch are both specified and don't line up, that could
+  //   cause problems, but everything should be specified from the back end
 
   if (!(branch in branches)) {
     // TODO(HD) actually
@@ -56,10 +60,6 @@ function git_commit(branch, current, parent, msg, link, type="none") {
       branches[branch] = branches[commits[parent].branch].branch(branch);
     }
   }
-
-  var commit_pos = (parent in commits) ? commits[parent].pos + 1 : 0;
-
-  commits[current] = {branch: branch, pos: commit_pos};
 
   var commit_info = {
     sha1: current,
@@ -73,6 +73,25 @@ function git_commit(branch, current, parent, msg, link, type="none") {
     commit_info.dotColor = "red";
   }
 
-  branches[branch].commit(commit_info);
+  if (merge_parent) {
+    // Do a merge from merge_parent branch into branches[branch]
+    merge_branch = branches[commits[merge_parent].branch];
+    merge_branch.merge(branches[branch], commit_info);
+  } else {
+    // Else do a regular commit
+    branches[branch].commit(commit_info);
+  }
+
+  var commit_pos = 0;  // Pos is zero if latest is not in commits (i.e. this is first commit)
+  if (latest in commits) {
+    commit_pos = commits[latest].pos;
+    if (parent in commits && commits[latest].branch == commits[parent].branch
+        || (merge_parent in commits && commits[latest].branch == commits[merge_parent].branch)) {
+      commit_pos += 1;
+    }
+  }
+
+  commits[current] = {branch: branch, pos: commit_pos};
+
   latest = current;
 }

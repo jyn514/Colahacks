@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gitgraph.js/1.11.4/gitgraph.min.css" integrity="sha256-NMEjcOKIgq9M/7nn2CN6xNwRXbgpYFOIBCdivsdNDTA=" crossorigin="anonymous" />
 {% endblock %}
 
+<!-- Renders a single form field with errors -->
 {% macro render_field(field) %}
   <dt>{{ field.label }}
   <dd>{{ field(**kwargs)|safe }}
@@ -20,47 +21,50 @@
   </dd>
 {% endmacro %}
 
-<!-- To be used within the gitGraph javascript -->
-{% macro git_commit(branch, current_sha1, parent_sha1, msg) %}
+<!-- Adds a single commit to the gitgraph canvas -->
+{% macro git_commit(branch, current_sha1, msg, parent_sha1="", merge_parent_sha1="") %}
+  {% set link = url_for('.main', version=current_sha1) %}
   {% set type = "current" if current_sha1 == current else "none" %}
-  <script> git_commit("{{ branch }}", "{{ current_sha1 }}", "{{ parent_sha1 }}", "{{ msg }}", "{{ link }}", "{{ type }}"); </script>
+  <script> git_commit("{{ branch }}", "{{ current_sha1 }}", "{{ parent_sha1 }}", "{{ msg }}", "{{ link }}", "{{ type }}", "{{ merge_parent_sha1 }}"); </script>
 {% endmacro %}
 
+<!-- Adds all from a list of 4-tuples to the gitgraph canvas -->
+{% macro make_gitgraph(commits) %}
+  {% for commit in commits %}
+    {{ git_commit(*commit) }}
+  {% endfor %}
+  <script> scroll_to("{{ current }}"); </script>
+{% endmacro %}
 
-
-{% set commit_history = [
-    ("master", "7c1143ced2774fba230e0107b7033f64d79d1009", "", "Fourth commit"),
-    ("master", "95c70baaddf1c2438714be6a4cb5fd1f392030c7", "", "Added some mathstuffs"),
-    ("master", "ad9484c90841843fa75173274a1d7fed3e2687fd", "", "Made mathstuffs even realer"),
-    ("master", "bdc0feddd122658fffbbd7f0d15493b9ac417bc7", "", "Added debugging directory stuff")
-  ]
+<!-- TODO(HD) remove this debug commit_tree and pass commit_tree from actually parsing the tree -->
+{% set commit_tree =
+    [ ("master", 0, "Dummy commit", "") ] * 30
+  + [ ("development", 1, "Dummy commit", "") ] * 5
+  + [ ("master", 2, "Merge commit", "bdc0feddd122658fffbbd7f0d15493b9ac417bc7", 1) ]
+  + [ ("master", 3, "Dummy commit", "") ] * 10
+  + [ ("development", 4, "Dummy commit", "") ]
+  + [
+      ("master", "7c1143ced2774fba230e0107b7033f64d79d1009", "Fourth commit", ""),
+      ("master", "95c70baaddf1c2438714be6a4cb5fd1f392030c7", "Added some mathstuffs", "7c1143ced2774fba230e0107b7033f64d79d1009"),
+      ("master", "ad9484c90841843fa75173274a1d7fed3e2687fd", "Made mathstuffs even realer", "95c70baaddf1c2438714be6a4cb5fd1f392030c7"),
+      ("master", "bdc0feddd122658fffbbd7f0d15493b9ac417bc7", "Added debugging directory stuff", "ad9484c90841843fa75173274a1d7fed3e2687fd")
+    ]
+  + [ ("master", 4, "Dummy commit", "") ] * 20
 %}
 
 {% block content %}
 <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
   <a href="{{ url_for('.main', clear=True) }}"><h1>Snapper</h1></a>
 
+  {% if project and commit_tree %}
   <div id="gitGraph_scrollbar" style="overflow-x: scroll">
     <canvas id="gitGraph"></canvas>
     <script src="{{ url_for('static', filename='setup_gitgraph.js') }}"></script>
-
-    <!-- TODO(HD) this is manually parsed from pydemo3, but should be parsed within snapper.py using rev-list -->
-    {% for i in range(60) %}
-      {{ git_commit("master", i, "", "Extra commit %d" % i) }}
-    {% endfor %}
-    {{ git_commit("master", "7c1143ced2774fba230e0107b7033f64d79d1009", "", "Fourth commit") }}
-    {{ git_commit("master", "95c70baaddf1c2438714be6a4cb5fd1f392030c7", "", "Added some mathstuffs") }}
-    {{ git_commit("master", "ad9484c90841843fa75173274a1d7fed3e2687fd", "", "Made mathstuffs even realer") }}
-    {{ git_commit("master", "bdc0feddd122658fffbbd7f0d15493b9ac417bc7", "", "Added debugging directory stuff") }}
-    <!-- To test the scrollbar -->
-    {% for i in range(20) %}
-      {{ git_commit("development", i, "", "Extra commit %d" % i) }}
-    {% endfor %}
-    <script> scroll_to("bdc0feddd122658fffbbd7f0d15493b9ac417bc7"); </script>
-    <!-- END TODO -->
+    {{ make_gitgraph(commit_tree) }}
   </div>
 
   <hr/>
+  {% endif %}
 
   {% if dirs %}
   <ul>
@@ -101,7 +105,7 @@
   <hr/>
 
   <!-- FILE SELECTION SECTION -->
-  {% if project_tree %}
+  {% if project and project_tree %}
     <!-- TODO(HD) fill in directory tree and link -->
     {% for file in project_tree %}
       {% for i in range(file[1]) %} &emsp; {% endfor %}
@@ -118,11 +122,8 @@
       {% endif %}
       <br/>
     {% endfor %}
-  {% else %}
-    <p>No project directory tree</p>
-  {% endif %}
-
   <hr/>
+  {% endif %}
 
   <!-- ZIP UPLOAD SECTION -->
   <form action="{{ url_for('.main') }}" method="post" enctype="multipart/form-data">

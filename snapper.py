@@ -119,6 +119,7 @@ def checkout(files, previous, current, directory):
 
             try:
                 with open(tmpfile) as original:  # should have been checked out by git
+                    # TODO: use pipelines so we don't read the whole file into memory
                     code = ''.join(original.readlines())  # NOTE: preserves newlines
                 lexer = pygments.lexers.guess_lexer_for_filename(f, f)
                 with open(html, 'x') as result:
@@ -131,8 +132,9 @@ def checkout(files, previous, current, directory):
             # TODO: cut back on wasteful IO
             diff = html + '.diff'
             with open(diff, 'x') as diff_file:
-                run(['git', 'diff', previous, current, f, '--git-dir',
-                     directory + '/.git'], stdout=diff_file)
+                Popen(['git', '--work-tree', tmpdir, '--git-dir',
+                       directory + '/.git', 'diff', previous, current, f],
+                      cwd=tmpdir, stdout=diff_file)
             if not os.stat(diff).st_size:
                 os.remove(diff)
 
@@ -141,23 +143,27 @@ def checkout(files, previous, current, directory):
 
 def tracked(f, commit, cwd):
     '''Tell if an object is tracked in commit'''
-    output = output_to_string(Popen(['git', '--git-dir', cwd + '/.git', 'ls-tree', commit,
-                                   f], stdout=PIPE).stdout)
+    output = output_to_string(Popen(['git', '--git-dir', cwd + '/.git',
+                                     'ls-tree', commit, f], stdout=PIPE).stdout)
     return not (output is None or output == '')
 
 
-def flatten(files, commit, directory):
+def flatten(files, commit, directory, gitdir=None):
     '''iterable, str, str -> list(str)
     turn directories into top-level files
     If files are untracked by git, discard with warning'''
+    if gitdir is None:
+        gitdir = directory + '/.git'
     result = []
     for f in files:
-        if os.path.isdir(f):
+        if os.path.isdir(directory + '/' + f):
             # TODO: python has terribly support for recursion, make this a while loop
-            output = Popen(['git', 'ls-tree', '--name-only', commit, f + '/'],
+            output = Popen(['git', '--git-dir', gitdir,
+                            'ls-tree', '--name-only', commit, f + '/'],
                            cwd=directory, stdout=PIPE).stdout
             # bytes to str, discarding newline
-            result += flatten((b.decode()[:-1] for b in output), commit, directory)
+            result += flatten((b.decode()[:-1] for b in output), commit, directory,
+                              gitdir)
         elif not tracked(f, commit, directory):
             print("WARNING: passed '%s' which is not tracked by git. Discarding." % f,
                   file=sys.stderr)
