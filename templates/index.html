@@ -56,16 +56,6 @@
 <div class="col-md-2 listpanel" style="top: 0; bottom:0; overflow-y: scroll;">
   <a href="{{ url_for('.main', clear=True) }}"><h1>Snapper</h1></a>
 
-  {% if project and commit_tree %}
-  <div id="gitGraph_scrollbar" style="overflow-x: scroll">
-    <canvas id="gitGraph"></canvas>
-    <script src="{{ url_for('static', filename='setup_gitgraph.js') }}"></script>
-    {{ make_gitgraph(commit_tree) }}
-  </div>
-
-  <hr/>
-  {% endif %}
-
   {% if dirs %}
   <ul>
     {% for d in dirs %}
@@ -92,37 +82,48 @@
     {% endif %}
     </div><br/>
 
-    <ul>{% for version in versions %}
+    {% if commit_tree %}
+    <div id="gitGraph_scrollbar" style="overflow-x: scroll">
+      <canvas id="gitGraph"></canvas>
+      <script src="{{ url_for('static', filename='setup_gitgraph.js') }}"></script>
+      {{ make_gitgraph(commit_tree) }}
+    </div>
+    {% endif %}
+
+    <!-- <ul>{% for version in versions %}
       <li><a href="{{ url_for('.main', version=version) }}">
       {% if version == current %}<strong>{{ version[:6] }}</strong>
       {% else %}{{ version }}{% endif %}
       </a></li>
-    {% endfor %}</ul><br />
+    {% endfor %}</ul><br /> -->
+
+    <hr/>
+
+    <!-- FILE SELECTION SECTION -->
+    <script>console.log("{{ project_tree }}");</script>
+    {% if project_tree %}
+      {% for file in project_tree %}
+        {% for i in range(file[1]) %} &emsp; {% endfor %}
+        {% if file[2] %}
+          <a href="{{ url_for('.main', codefile=file[3])}}">
+            {% if file[0] == codefile %}
+              <strong>{{ file[0] }}</strong>
+            {% else %}
+              {{ file[0] }}
+            {% endif %}
+          </a>
+        {% else %}
+          {{ file[0] }}
+        {% endif %}
+        <br/>
+      {% endfor %}
+    {% else %}
+      <p>No trackable files</p>
+    {% endif %}
+
+    <hr/>
   {% else %}
     <p>No project selected</p>
-  {% endif %}
-
-  <hr/>
-
-  <!-- FILE SELECTION SECTION -->
-  {% if project and project_tree %}
-    <!-- TODO(HD) fill in directory tree and link -->
-    {% for file in project_tree %}
-      {% for i in range(file[1]) %} &emsp; {% endfor %}
-      {% if file[2] %}
-        <a href="{{ url_for('.main', codefile=file[3])}}">
-          {% if file[0] == codefile %}
-            <strong>{{ file[0] }}</strong>
-          {% else %}
-            {{ file[0] }}
-          {% endif %}
-        </a>
-      {% else %}
-        {{ file[0] }}
-      {% endif %}
-      <br/>
-    {% endfor %}
-  <hr/>
   {% endif %}
 
   <!-- ZIP UPLOAD SECTION -->

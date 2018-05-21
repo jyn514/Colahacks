@@ -53,7 +53,6 @@ function git_commit(branch, current, parent, msg, link, type="none", merge_paren
   //   cause problems, but everything should be specified from the back end
 
   if (!(branch in branches)) {
-    // TODO(HD) actually
     if (!parent || !(parent in commits)) {
       branches[branch] = gitGraph.branch(branch);
     } else {
