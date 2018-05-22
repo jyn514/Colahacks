@@ -1,3 +1,4 @@
 Pygments
 flask_wtf
 WTForms
+WebUI>=0.2.0  # from `pip install git+git://github.com/widdershin/flask-desktop.git`

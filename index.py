@@ -8,6 +8,8 @@ from flask_wtf import FlaskForm, CSRFProtect
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from werkzeug import secure_filename
 
+from webui import WebUI
+
 import snapper
 from snapper import SAVE_ROOT
 
@@ -15,6 +17,7 @@ UPLOADS_DIR = os.path.join(SAVE_ROOT, 'uploads')
 PROJECTS_DIR = SAVE_ROOT  # os.path.join(SAVE_ROOT, 'projects')  # TODO(HD) projects probably should be kept in a subdirectory
 
 app = Flask(__name__)
+ui = WebUI(app, debug=True)  # TODO(HD) remove debug
 
 
 # Patch for lost file permissions provided on StackOverflow by Anthon
@@ -178,4 +181,5 @@ if __name__ == "__main__":
     csrf = CSRFProtect()
     csrf.init_app(app)
 
-    app.run(debug=True)  #TODO remove debug
+    # app.run(debug=True)  #TODO remove debug
+    ui.run()
